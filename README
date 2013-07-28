@@ -1,22 +1,21 @@
 Csv2Lucene
 
 Description:
-     Csv2Lucene goal is to index a large amount of huge CSV files quickly.
-     The focus is on the record level and not the file level when creating
-     threads. Multi-Threading one record lines instead of files has a couple 
-     of advantages when it comes to speed as well as recovery.
+   Csv2Lucene's goal is to index a large amount of huge CSV files quickly.
+   The focus is on the record level and not the file level when creating threads. 
+   Multi-Threading on record lines instead of files has advantages when it comes
+   to speed as well as recovery.
 
 Requirements:
-     - Quickly index a large amount of huge CSV files.
-     - Thread on record lines not on files.
-     
-Advantages of threading on record level instead of by file:
-     Largest advantage is when working on a single huge database dump file or
-     the last file in a set, multiple threads are still created versus using
-     a single thread per file.  Another would be a possible simpler recovery
-     after application abruptly halts, since where processing a smaller set
-     of files at a time; yes more then one file can be processing at a time 
-     since we may be on the tail end of one file and the beginning of the next,
-     or when working on the entire contents of a couple small files.
+   - Quickly index a large amount of huge CSV files.
+   - Thread on record lines not on files.
 
-     
+Advantages of threading on the record level instead of by file:
+   - Working on a single huge database dump file.
+   - Faster to index until the very end, keeping all threads busy until the last few lines
+   - Simpler recovery from abrupt application halts, since we are reading a smaller set of 
+   files at a time. 
+
+Note: More than one file can be read at a time, when reading the tail end of one file
+the beginning of the next file is read, keeping an continuous flow of record lines 
+until the last record of the last file is read.
