@@ -1,0 +1,119 @@
+<project name="Csv2Lucene" default='build' basedir="." >
+   <description>
+     Build Csv2Lucene Project.
+   </description>
+
+  <!-- Default property values, if not overridden elsewhere: -->
+  <property name='build' location='build' />
+  <property name='app.version' value='0.0.1'/>
+  <property name='distro-name' value='${ant.project.name}-${app.version}'/>
+  <tstamp><format property='build.time' pattern='yyyy-MM-dd HH:mm:ss'/></tstamp>
+
+  <property file='build.properties'/>
+
+  <path id='compile.classpath'>
+    <fileset dir='lib'>
+       <include name='*.jar'/>
+       <include name='*.properties'/>
+    </fileset>
+  </path>
+
+   <target name='clean' description="Delete all build artifacts." >
+     <delete dir='${build}'/>
+   </target>
+
+   <target name='build' description='Compile source files and place beside source.'>
+   	 <mkdir dir="${build}/classes"/>
+     <javac 
+     	srcdir="src" 
+     	destdir="${build}/classes">   
+       <classpath refid='compile.classpath'/>
+     </javac>
+     <!-- Here's a simple way of debugging a path, fileset, or patternset, using its refid: -->
+     <echo>Classpath: ${toString:compile.classpath}</echo>
+
+    <jar destfile='${build}/dist/${distro-name}.jar' >
+      <fileset dir="${build}/classes"/>
+      <!-- The static manifest.mf file is merged with additional dynamic items, specified here : -->
+      <manifest>
+        <attribute name='Specification-Title' value='${ant.project.name}' />
+      	<attribute name='Specification-Version' value='${app.version}' />
+        <attribute name='Implementation-Version' value='${app.version} ${build.time}'/> 
+      	<attribute name='Built-By' value='Brian G. Feldman bgfeldm@yahoo.com'/>
+        <attribute name='Main-Class' value='us.brianfeldman.csv2lucene.IndexCsv'/>
+      </manifest>
+    </jar>
+
+</target>
+
+<target name='javadoc' description='Generate javadoc.' >
+    <javadoc
+      use='true' author='true'  version='true'
+      access='package' 
+      sourcepath='src'
+      packagenames='*.*' 
+      destdir='${build}/javadoc'
+      windowtitle='${app.name} ${app.version}'
+      noqualifier='java.*:javax.*:com.sun.*'   
+      linksource='false'
+      executable='C:\Program Files\Java\jdk1.7.0_21/bin/javadoc'
+    >
+      <classpath refid='compile.classpath'/>
+      <link href='http://java.sun.com/javase/7/docs/api/'/>
+      <link href='https://lucene.apache.org/core/4_3_0/core/'/>
+      <header><![CDATA[<h1>${ant.project.name} ${app.version}</h1>]]></header>
+    </javadoc>
+	
+    <jar destfile='${build}/dist/${distro-name}-javadoc.jar' >
+      <fileset dir="${build}/javadoc"/>
+      <manifest>
+        <attribute name='Specification-Title' value='${ant.project.name}' />
+        <attribute name='Specification-Version' value='${app.version}' />
+        <attribute name='Implementation-Version' value='${app.version} ${build.time}'/> 
+        <attribute name='Built-By' value='Brian G. Feldman bgfeldm@yahoo.com'/>
+        <attribute name='Main-Class' value='us.brianfeldman.csv2lucene.IndexCsv'/>
+      </manifest>
+    </jar>
+	
+  </target>
+
+  <target name='distro-binary' description='Create zip file with executable jar, docs.' depends='build, javadoc'>
+    <zip destfile='${build}/dist/${distro-name}-binary.zip' duplicate='preserve'>
+      <zipfileset dir='${build}/dist/' includes='${distro-name}.jar'/>
+      <zipfileset dir='${build}/javadoc' prefix='javadoc' />
+    </zip>
+  </target>
+
+  <target name='run-Index' description=''>
+	 <java classname="us.brianfeldman.lucene.Indexer" fork='true'>
+        <classpath location='${build}/dist/${distro-name}.jar'/>
+	 	<classpath refid='compile.classpath'/>
+	 	<arg line="res/test/test2.wd"/>
+	 </java>
+  </target>
+
+  <target name='run-Search' description=''>
+     <java classname="us.brianfeldman.lucene.Searcher" fork='true'>
+        <classpath location='${build}/dist/${distro-name}.jar'/>
+        <classpath refid='compile.classpath'/>
+        <arg line="*:*"/>
+     </java>
+  </target>
+
+  <target name='test-csv' description=''>
+	     <java classname='us.brianfeldman.fileformat.csv.ComplexCSVReader' fork='true'>
+	     	<arg line="res/test/test1.csv"/>
+	        <classpath refid='compile.classpath'/>
+	     	<classpath location='${build}/dist/${distro-name}.jar'/>
+	     </java>
+  </target>
+
+  <target name='test-simplecsv' description=''>
+	         <java classname='us.brianfeldman.fileformat.csv.SimpleCSVReader' fork='true'>
+	            <arg line="res/test/test1.wd"/>
+	            <classpath refid='compile.classpath'/>
+	            <classpath location='${build}/dist/${distro-name}.jar'/>
+	         </java>
+  </target>	
+</project>
+
