@@ -33,6 +33,7 @@ public class SimpleCSVReader implements Iterator<Map<String, String>> {
     private BufferedReader reader;
     private String[] header;
     private Map<String, String> nextLine;
+    private int currentLineNumber = 0;
 
     /**
      * Constructor
@@ -50,6 +51,21 @@ public class SimpleCSVReader implements Iterator<Map<String, String>> {
           this.nextLine = nextMap();
     }
 
+    /**
+     * @return current line number
+     */
+    public int getLineNumber(){
+		return currentLineNumber;
+    }
+    
+    /**
+     * Get File Name
+     * @return File Name
+     */
+    public String getFileName(){
+		return file.getName();
+    }
+    
     /**
      * Close File Reader.
      * 
@@ -90,7 +106,8 @@ public class SimpleCSVReader implements Iterator<Map<String, String>> {
    @Override
    public Map<String, String> next(){
         Map<String, String> currentLine = nextLine;
-
+        currentLineNumber++;
+        
         try {
 			this.nextLine=nextMap();
 		} catch (IOException e) {

@@ -56,16 +56,16 @@ public class DocumentFlyweightPool {
 	/**
 	 * Get Flyweight Lucene Document.
 	 * 
-	 * Through round robin fastion get a Flyweight Lucene Document.
+	 * Through round robin fashion get a Flyweight Lucene Document.
 	 * 
+	 * @param record 
 	 * @return Document
 	 */
 	public synchronized Document getDocument(Map<String, String> record){
-		System.out.println(pool.size());
 		if (pool.size() < poolSize){
 			populate(record);
 		}
-		
+				
 		if (lastEl == poolSize-1){
 			lastEl=0;
 		} else {

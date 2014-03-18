@@ -3,15 +3,11 @@
  */
 package us.brianfeldman.fileformat.csv;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -57,6 +53,14 @@ public class ComplexCSVReader implements Iterator {
 		 // inputStream.skip(8); // Skip over first couple byes of file.
 		 this.reader = new CsvMapReader(new InputStreamReader(inputStream), COMMA_DELIMITED);
 		 this.header = reader.getHeader(false);
+	}
+	
+	/**
+	 * Get Line Number
+	 * @return current line number
+	 */
+	public int getLineNumber(){
+		return reader.getLineNumber();
 	}
 	
 	/**

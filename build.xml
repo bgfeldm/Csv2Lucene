@@ -26,7 +26,7 @@
    	 <mkdir dir="${build}/classes"/>
      <javac 
      	srcdir="src" 
-     	destdir="${build}/classes">   
+     	destdir="${build}/classes">
        <classpath refid='compile.classpath'/>
      </javac>
      <!-- Here's a simple way of debugging a path, fileset, or patternset, using its refid: -->

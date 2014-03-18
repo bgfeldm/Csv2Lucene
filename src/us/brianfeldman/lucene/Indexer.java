@@ -2,30 +2,28 @@ package us.brianfeldman.lucene;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.log4j.PropertyConfigurator;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.NIOFSDirectory;
 import org.apache.lucene.util.Version;
+
+import com.google.common.base.Stopwatch;
 
 import us.brianfeldman.fileformat.csv.SimpleCSVReader;
 
@@ -37,6 +35,16 @@ import us.brianfeldman.fileformat.csv.SimpleCSVReader;
  */
 public class Indexer {
 	private static final Logger logger = LoggerFactory.getLogger(Indexer.class);
+	
+	static {
+		Properties props = new Properties();
+		try {
+			props.load(new FileInputStream("lib/log4j.properties"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		PropertyConfigurator.configure(props);
+	}
 	
 	private String indexPath="build/luceneIndex";
 	private IndexWriter writer;
@@ -58,27 +66,32 @@ public class Indexer {
 	 * Open Lucene Index Writer.
 	 * @throws IOException
 	 */
-	public void openWriter() throws IOException{
+	public void openWriter() throws IOException {
 		File indexPathFile = new File(indexPath);
-		Directory directory = NIOFSDirectory.open(indexPathFile);
-		System.out.println(indexPathFile.getAbsolutePath());
+		logger.info("Opening index writer at: "+indexPathFile.getAbsolutePath());
 		
-		Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_43);
-		IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_43, analyzer);
+		Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
+		IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_47, analyzer);
 		iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
 		
 		// Optional: for better indexing performance, increase the RAM buffer.  
 		// But if you do this, increase the max heap size to the JVM (eg add -Xmx512m or -Xmx1g):
 		// iwc.setRAMBufferSizeMB(256.0);
 		
-		writer = new IndexWriter(directory, iwc);
+		try {
+			Directory directory = NIOFSDirectory.open(indexPathFile);
+			writer = new IndexWriter(directory, iwc);
+		} catch (IOException e) {
+			logger.error("Failed to open index writer", e);
+		}
 	}
 
 	/**
-	 * Clode Lucene Index Writer.
+	 * Close Lucene Index Writer.
 	 * @throws IOException
 	 */
 	public void closeWriter() throws IOException{
+		logger.info("Closing index writer");
 		if (writer != null){
 			writer.close();
 		}
@@ -90,21 +103,22 @@ public class Indexer {
 	 * @param dirToIndex
 	 * @throws IOException
 	 */
-	public void indexDir(File file) throws IOException{
-		
+	public void indexDir(File dirToIndex) throws IOException{		
 		// Create List of Files.
+		logger.info("Building list of files to index");
 		File[] files = null;
-		if (file.isDirectory()){
-		    files=file.listFiles();
-		} else if (file.isFile()) {
+		if (dirToIndex.isDirectory()){
+		    files=dirToIndex.listFiles();
+		} else if (dirToIndex.isFile()) {
 		     files = new File[1];
-		     files[0]=file;
+		     files[0]=dirToIndex;
 		}
 
-		
 		recordQueue = new ArrayBlockingQueue<Runnable>(recordQueueCapacity, true);
 		ThreadPoolExecutor executor = new ThreadPoolExecutor(maxThreads, maxThreads, 1, TimeUnit.MINUTES, recordQueue, new ThreadPoolExecutor.CallerRunsPolicy() );
 		executor.prestartAllCoreThreads();
+		
+	    Stopwatch stopwatch = Stopwatch.createStarted();
 
 		if (files != null){
 		     for (int i = 0; i < files.length; i++){
@@ -132,11 +146,12 @@ public class Indexer {
 		     try{
 		          Thread.sleep(20);
 		     } catch (InterruptedException e){
-		                      // ignore.
+		          // ignore.
 		     }
 		}
-		
-		
+
+		stopwatch.stop();
+		logger.info("Index time: "+stopwatch);
 	}
 	
 	/**
@@ -147,10 +162,10 @@ public class Indexer {
 		String indexDir = args[0];
 		File indexDirFile = new File(indexDir);
 		if (! indexDirFile.canRead()){
-			throw new FileNotFoundException(indexDirFile.getAbsolutePath());
+			logger.error("Can not read directory to index: "+indexDir);
 		}
 
-		Indexer indexer = new Indexer();
+		Indexer indexer = new Indexer();		
 		indexer.indexDir(indexDirFile);
 		indexer.closeWriter();
 	}	

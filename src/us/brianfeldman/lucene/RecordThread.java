@@ -56,7 +56,6 @@ public class RecordThread implements Runnable {
 			field.setStringValue( record.get(key).toLowerCase().trim() );
 		}
 		
-		
 		try {
 			writer.addDocument(doc);
 		} catch (IOException e) {

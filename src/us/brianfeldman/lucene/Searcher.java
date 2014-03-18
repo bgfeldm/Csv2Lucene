@@ -5,14 +5,16 @@ package us.brianfeldman.lucene;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexableField;
+import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -21,6 +23,8 @@ import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.NIOFSDirectory;
 import org.apache.lucene.util.Version;
+
+import com.google.common.base.Stopwatch;
 
 /**
  * Search Lucene Index
@@ -51,22 +55,30 @@ public class Searcher {
 	 * @throws ParseException
 	 * @throws IOException
 	 * @throws ParseException
+	 * @throws org.apache.lucene.queryparser.classic.ParseException 
 	 */
-	public void find(String queryStr) throws ParseException, IOException, org.apache.lucene.queryparser.classic.ParseException {
-	    Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_43);
-	    Query query = new QueryParser(Version.LUCENE_43, null, analyzer).parse(queryStr);
+	public void find(String queryStr) throws IOException, ParseException {
+	    Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
+	    Query query = new QueryParser(Version.LUCENE_47, null, analyzer).parse(queryStr);
 	    TopScoreDocCollector collector = TopScoreDocCollector.create(100, false);
 
+	    Stopwatch stopwatch = Stopwatch.createStarted();
+	    
 	    searcher.search(query, collector);
 	    ScoreDoc[] hits = collector.topDocs().scoreDocs;
+	    
+	    stopwatch.stop();
+	    long millis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
+	    
+	    System.out.println("Matching Results: "+ hits.length+" ("+stopwatch+")");
 	    
 	    for (int i=0; i<hits.length;++i){
 	       int docId = hits[i].doc;
 	       
-	       System.out.println("\n----Document----");
+	       System.out.println("---- Document "+(i+1));
 	       
-	       Document d = searcher.doc(docId);
-	       List<IndexableField> fields = d.getFields();
+	       Document doc = searcher.doc(docId);
+	       List<IndexableField> fields = doc.getFields();
 	       for (IndexableField field: fields){
 	             System.out.println(field.name() + ": "+ field.stringValue());
 	       }
@@ -74,6 +86,10 @@ public class Searcher {
 	}
 
 	
+	/**
+	 * Close
+	 * @throws IOException
+	 */
 	public void close() throws IOException{
 		if (reader != null){
 			//searcher.close();
