@@ -23,6 +23,10 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.NIOFSDirectory;
 import org.apache.lucene.util.Version;
 
+import com.fasterxml.uuid.EthernetAddress;
+import com.fasterxml.uuid.Generators;
+import com.fasterxml.uuid.UUIDGenerator;
+import com.fasterxml.uuid.impl.TimeBasedGenerator;
 import com.google.common.base.Stopwatch;
 
 import us.brianfeldman.fileformat.csv.SimpleCSVReader;
@@ -49,16 +53,14 @@ public class Indexer {
 	private String indexPath="build/luceneIndex";
 	private IndexWriter writer;
 	
-	private BlockingQueue<Runnable> recordQueue;   // Record represents a line from a CSV file.
+	private String indexTime = String.valueOf(System.currentTimeMillis() / 1000l);
+	private TimeBasedGenerator uuidGenerator = Generators.timeBasedGenerator(EthernetAddress.fromInterface());
 
-	private long startTime;
-	private long endTime;
+	private BlockingQueue<Runnable> recordQueue;   // Record represents a line from a CSV file.
 	
-    private final int maxThreads = 2;
-    private final int recordQueueCapacity = maxThreads * 2;
+    private final int CPUs = Runtime.getRuntime().availableProcessors();
 
 	public Indexer() throws IOException{
-		
 		openWriter();
 	}
 
@@ -77,7 +79,8 @@ public class Indexer {
 		// Optional: for better indexing performance, increase the RAM buffer.  
 		// But if you do this, increase the max heap size to the JVM (eg add -Xmx512m or -Xmx1g):
 		// iwc.setRAMBufferSizeMB(256.0);
-		
+		iwc.setRAMBufferSizeMB(256.0);
+
 		try {
 			Directory directory = NIOFSDirectory.open(indexPathFile);
 			writer = new IndexWriter(directory, iwc);
@@ -97,36 +100,46 @@ public class Indexer {
 		}
 	}
 
+
+	/**
+	 * Generate File list from Direcory.
+	 * @param directory
+	 * @return 
+	 */
+	public File[] generateFileList(File dir){
+		logger.info("Building list of files");
+		File[] files = null;
+		if (dir.isDirectory()){
+		    files=dir.listFiles();
+		} else if (dir.isFile()) {
+		     files = new File[1];
+		     files[0]=dir;
+		}
+		return files;
+	}
+	
 	/**
 	 * Index Directory of CSV files.
-	 * 
-	 * @param dirToIndex
+	 * @param files array of files to index
 	 * @throws IOException
 	 */
-	public void indexDir(File dirToIndex) throws IOException{		
-		// Create List of Files.
-		logger.info("Building list of files to index");
-		File[] files = null;
-		if (dirToIndex.isDirectory()){
-		    files=dirToIndex.listFiles();
-		} else if (dirToIndex.isFile()) {
-		     files = new File[1];
-		     files[0]=dirToIndex;
-		}
+	public void index(File[] files, int CPUmultiplier) throws IOException{
+		int maxThreads = (CPUs * CPUmultiplier);
 
-		recordQueue = new ArrayBlockingQueue<Runnable>(recordQueueCapacity, true);
+		recordQueue = new ArrayBlockingQueue<Runnable>(maxThreads*2, true);
 		ThreadPoolExecutor executor = new ThreadPoolExecutor(maxThreads, maxThreads, 1, TimeUnit.MINUTES, recordQueue, new ThreadPoolExecutor.CallerRunsPolicy() );
 		executor.prestartAllCoreThreads();
-		
-	    Stopwatch stopwatch = Stopwatch.createStarted();
-
 		if (files != null){
+
 		     for (int i = 0; i < files.length; i++){
 		    	DocumentFlyweightPool docFlyweightPool = new DocumentFlyweightPool(maxThreads);
 		        SimpleCSVReader reader = new SimpleCSVReader(files[i]);
 		        while(reader.hasNext() ){
 		             while(reader.hasNext() && recordQueue.remainingCapacity() != 0){
 		                  Map<String, String> record = reader.next();
+		                  record.put("_uuid", uuidGenerator.generate().toString());
+		                  record.put("_doc_id", reader.getFileName()+":"+reader.getLineNumber());
+		                  record.put("_index_time", indexTime);
 		                  recordQueue.add(new RecordThread(record, docFlyweightPool, writer));
 		             }
 
@@ -144,14 +157,11 @@ public class Indexer {
 
 		while(! executor.isTerminated()){
 		     try{
-		          Thread.sleep(20);
+		          Thread.sleep(10);
 		     } catch (InterruptedException e){
 		          // ignore.
 		     }
 		}
-
-		stopwatch.stop();
-		logger.info("Index time: "+stopwatch);
 	}
 	
 	/**
@@ -165,8 +175,14 @@ public class Indexer {
 			logger.error("Can not read directory to index: "+indexDir);
 		}
 
-		Indexer indexer = new Indexer();		
-		indexer.indexDir(indexDirFile);
+		Indexer indexer = new Indexer();
+		File[] files = indexer.generateFileList(indexDirFile);
+		logger.info("Indexing files; file count: "+files.length);
+		Stopwatch stopwatch = Stopwatch.createStarted();
+		indexer.index(files, 2);
+		logger.info("Finished adding records; closing index.");
 		indexer.closeWriter();
+		stopwatch.stop();
+		logger.info("Index finalizated; time: "+stopwatch);
 	}	
 }

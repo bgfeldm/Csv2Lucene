@@ -37,6 +37,7 @@ public class Searcher {
 	private final String indexPath="build/luceneIndex";
 	private IndexReader reader;
 	private IndexSearcher searcher;
+	private Stopwatch stopwatch = Stopwatch.createUnstarted();
 
 	/**
 	 * @throws IOException
@@ -52,39 +53,55 @@ public class Searcher {
 	 * Find / Search Lucene
 	 * 
 	 * @param queryStr
+	 * @return 
 	 * @throws ParseException
 	 * @throws IOException
 	 * @throws ParseException
 	 * @throws org.apache.lucene.queryparser.classic.ParseException 
 	 */
-	public void find(String queryStr) throws IOException, ParseException {
+	public ScoreDoc[] find(String queryStr) {
 	    Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
-	    Query query = new QueryParser(Version.LUCENE_47, null, analyzer).parse(queryStr);
 	    TopScoreDocCollector collector = TopScoreDocCollector.create(100, false);
-
-	    Stopwatch stopwatch = Stopwatch.createStarted();
 	    
-	    searcher.search(query, collector);
-	    ScoreDoc[] hits = collector.topDocs().scoreDocs;
-	    
-	    stopwatch.stop();
-	    long millis = stopwatch.elapsed(TimeUnit.MILLISECONDS);
-	    
-	    System.out.println("Matching Results: "+ hits.length+" ("+stopwatch+")");
-	    
-	    for (int i=0; i<hits.length;++i){
-	       int docId = hits[i].doc;
-	       
-	       System.out.println("---- Document "+(i+1));
-	       
-	       Document doc = searcher.doc(docId);
-	       List<IndexableField> fields = doc.getFields();
-	       for (IndexableField field: fields){
-	             System.out.println(field.name() + ": "+ field.stringValue());
-	       }
-	    }
+	    ScoreDoc[] hits = null;
+		try {
+			Query query = new QueryParser(Version.LUCENE_47, null, analyzer).parse(queryStr);
+	    	stopwatch.start();
+			searcher.search(query, collector);
+		    hits = collector.topDocs().scoreDocs;
+		    stopwatch.stop();
+		} catch (ParseException | IOException e) {
+			e.printStackTrace();
+		}
+		return hits;
 	}
 
+	/**
+	 * Display Search Results.
+	 * @param hits
+	 */
+	public void displayResults(ScoreDoc[] hits){
+	    stopwatch.elapsed(TimeUnit.MILLISECONDS);
+	    
+	    System.out.println("Matching Results: "+ hits.length+" ("+stopwatch+")");
+		
+	    for (int i=0; i<hits.length;++i){
+		       int docId = hits[i].doc;
+		       
+		       System.out.println("---- Document "+(i+1));
+		       
+				try {
+					Document doc = searcher.doc(docId);
+				    List<IndexableField> fields = doc.getFields();
+				    for (IndexableField field: fields){
+				          System.out.println(field.name() + ": "+ field.stringValue());
+				    }
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+		    }
+	}
 	
 	/**
 	 * Close
@@ -106,7 +123,8 @@ public class Searcher {
 	public static void main(String[] args) throws IOException, ParseException, org.apache.lucene.queryparser.classic.ParseException {
 		String queryStr=args[0];
 		Searcher search = new Searcher();
-		search.find(queryStr);
+		ScoreDoc[] hits = search.find(queryStr);
+		search.displayResults(hits);
 		search.close();
 	}	
 	
