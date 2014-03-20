@@ -86,10 +86,11 @@
 
   <target name='run-Index' description=''>
 	 <java classname="us.brianfeldman.lucene.Indexer" fork='true'>
+	    <jvmarg value="-Xms512m"/>
 	 	<jvmarg value="-Xmx512m"/>
         <classpath location='${build}/dist/${distro-name}.jar'/>
 	 	<classpath refid='compile.classpath'/>
-	 	<arg line="res/test/test2.wd"/>
+	 	<arg line="res/test"/>
 	 </java>
   </target>
 

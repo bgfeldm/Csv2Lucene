@@ -12,18 +12,31 @@ import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexableField;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.uuid.EthernetAddress;
+import com.fasterxml.uuid.Generators;
+import com.fasterxml.uuid.impl.TimeBasedGenerator;
 
 /**
+ * RecordThread
  * 
+ * Record thread builds the Lucene Document from the record,
+ * then adds the document to Lucene writer.
  * 
  * @author Brian G. Feldman <bgfeldm@yahoo.com>
  */
 public class RecordThread implements Runnable {
+	private static final Logger logger = LoggerFactory.getLogger(RecordThread.class);
 
 	private Map<String, String> record;
 	private IndexWriter writer;
 	private DocumentFlyweightPool docPool;
 	
+	
+	private TimeBasedGenerator uuidGenerator = Generators.timeBasedGenerator(EthernetAddress.fromInterface());
+
 	/**
 	 * Constructor 
 	 * 
@@ -40,7 +53,6 @@ public class RecordThread implements Runnable {
 	@Override
 	public void run() {
 
-		
 		/*
 		 * Document doc = new Document();
 		for(String key: record.keySet()){
@@ -49,6 +61,9 @@ public class RecordThread implements Runnable {
 			doc.add(field);
 		}
 		*/
+
+        record.put("_uuid", generateUUID());
+
 		
 		Document doc = docPool.getDocument(record);
 		for(String key: record.keySet()){
@@ -62,14 +77,12 @@ public class RecordThread implements Runnable {
 			e.printStackTrace();
 		}
 
+		logger.debug("completed: " + record.get("_doc_id"));
 	}
 	
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
 
+	private synchronized String generateUUID(){
+		return uuidGenerator.generate().toString();
 	}
 
 }

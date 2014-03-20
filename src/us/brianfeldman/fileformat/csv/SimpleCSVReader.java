@@ -6,7 +6,6 @@ package us.brianfeldman.fileformat.csv;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
@@ -17,8 +16,6 @@ import java.util.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import us.brianfeldman.lucene.Indexer;
-
 /**
  * Simple CSV File Reader, iterate over CSV lines returned a Map. 
  * 
@@ -28,7 +25,7 @@ import us.brianfeldman.lucene.Indexer;
 public class SimpleCSVReader implements Iterator<Map<String, String>> {
 	private static final Logger logger = LoggerFactory.getLogger(SimpleCSVReader.class);
 	
-    private static final String separator = "~";
+    private String separator = ",";
     private File file;
     private BufferedReader reader;
     private String[] header;
@@ -39,12 +36,14 @@ public class SimpleCSVReader implements Iterator<Map<String, String>> {
      * Constructor
      * 
      * @param file
+     * @param separator 
      * @throws IOException
      */
-    public SimpleCSVReader(File file) throws IOException {
-         this.file=file;
+    public SimpleCSVReader(File file, String separator) throws IOException {
+         this.file = file;
+         this.separator = separator;
          FileInputStream fstream = new FileInputStream(file);
-         fstream.skip(8); // trim off magic header.
+         //fstream.skip(8); // trim off magic header.
 
           this.reader = new BufferedReader(new InputStreamReader(fstream));
           this.header = reader.readLine().split(separator);
@@ -52,6 +51,7 @@ public class SimpleCSVReader implements Iterator<Map<String, String>> {
     }
 
     /**
+     * Get line number
      * @return current line number
      */
     public int getLineNumber(){
@@ -130,7 +130,7 @@ public class SimpleCSVReader implements Iterator<Map<String, String>> {
 	public static void main(String[] args) throws IOException {
 		String filename = args[0];
 		
-		SimpleCSVReader reader = new SimpleCSVReader(new File(filename));
+		SimpleCSVReader reader = new SimpleCSVReader(new File(filename), ",");
 		while(reader.hasNext()){
 			System.out.println(reader.next());
 		}
