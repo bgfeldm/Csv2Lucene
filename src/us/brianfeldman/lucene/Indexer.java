@@ -29,6 +29,7 @@ import org.apache.lucene.util.Version;
 
 import com.google.common.base.Stopwatch;
 
+import us.brianfeldman.fileformat.csv.ComplexCSVReader;
 import us.brianfeldman.fileformat.csv.SimpleCSVReader;
 
 /**
@@ -38,7 +39,18 @@ import us.brianfeldman.fileformat.csv.SimpleCSVReader;
  *
  */
 public class Indexer {
-	private static final Logger logger = LoggerFactory.getLogger(Indexer.class);
+	private static final Logger LOG = LoggerFactory.getLogger(Indexer.class);
+	
+    private static final int CPU_PROCESSORS = Runtime.getRuntime().availableProcessors();
+    
+	private final String indexPath="build/luceneIndex";
+
+	private IndexWriter writer;
+	
+	private final String indexTime = String.valueOf(System.currentTimeMillis() / 1000l);
+	
+	private BlockingQueue<Runnable> recordQueue;   // Record represents a line from a CSV file.
+	
 	
 	static {
 		Properties props = new Properties();
@@ -50,15 +62,6 @@ public class Indexer {
 		PropertyConfigurator.configure(props);
 	}
 	
-    private static final int CPUs = Runtime.getRuntime().availableProcessors();
-    
-	private String indexPath="build/luceneIndex";
-
-	private IndexWriter writer;
-	
-	private String indexTime = String.valueOf(System.currentTimeMillis() / 1000l);
-	
-	private BlockingQueue<Runnable> recordQueue;   // Record represents a line from a CSV file.
 	
 	public Indexer() throws IOException{
 		openWriter();
@@ -70,9 +73,9 @@ public class Indexer {
 	 */
 	public void openWriter() throws IOException {
 		File indexPathFile = new File(indexPath);
-		logger.info("Opening index writer at: "+indexPathFile.getAbsolutePath());
+		LOG.info("Opening index writer at: "+indexPathFile.getAbsolutePath());
 		
-		Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
+		final Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
 		IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_47, analyzer);
 		iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
 		
@@ -82,10 +85,10 @@ public class Indexer {
 		iwc.setRAMBufferSizeMB(256.0);
 
 		try {
-			Directory directory = NIOFSDirectory.open(indexPathFile);
+		    Directory directory = NIOFSDirectory.open(indexPathFile);
 			writer = new IndexWriter(directory, iwc);
 		} catch (IOException e) {
-			logger.error("Failed to open index writer", e);
+			LOG.error("Failed to open index writer", e);
 		}
 	}
 
@@ -94,7 +97,7 @@ public class Indexer {
 	 * @throws IOException
 	 */
 	public void closeWriter() throws IOException{
-		logger.info("Closing index writer");
+		LOG.info("Closing index writer");
 		if (writer != null){
 			writer.close();
 		}
@@ -103,22 +106,26 @@ public class Indexer {
 	/**
 	 * Index Directory of CSV files.
 	 * @param files array of files to index
+	 * @param cpuMultiplier 
 	 * @throws IOException
 	 */
-	public void index(Collection<File> files, int CPUmultiplier) throws IOException{
-		int maxThreads = (CPUs * CPUmultiplier);
-		logger.debug("maxthreads: "+maxThreads);
-		
+	public void index(final Collection<File> files, final int cpuMultiplier) throws IOException{
+		final int maxThreads = (CPU_PROCESSORS * cpuMultiplier);
+		LOG.debug("maxthreads: {}", maxThreads);
+
 		recordQueue = new ArrayBlockingQueue<Runnable>(maxThreads*2, true);
 	    DocumentFlyweightPool docFlyweightPool = new DocumentFlyweightPool(maxThreads);
 		ThreadPoolExecutor executor = new ThreadPoolExecutor(maxThreads, maxThreads, 1, TimeUnit.MINUTES, recordQueue, new ThreadPoolExecutor.CallerRunsPolicy() );
 		executor.prestartAllCoreThreads();
 
-		Iterator<File> it = files.iterator();
-		while(it.hasNext()){
-		     File file = it.next();
-		     logger.info("Indexing file: "+file.getAbsolutePath());
-		     SimpleCSVReader reader = new SimpleCSVReader(file, ",");
+		Iterator<File> fileIterator = files.iterator();
+		while(fileIterator.hasNext()){
+		     File file = fileIterator.next();
+		     LOG.info("Indexing file: {}", file.getAbsolutePath());
+
+		     //SimpleCSVReader reader = new SimpleCSVReader(file, ",");
+		     ComplexCSVReader reader = new ComplexCSVReader(file);
+		     
 		     while(reader.hasNext() ){
 		         while(reader.hasNext() && recordQueue.remainingCapacity() != 0){
 		              Map<String, String> record = reader.next();
@@ -152,20 +159,20 @@ public class Indexer {
 	 */
 	public static void main(String[] args) throws IOException {
 		String indexDir = args[0];
-		String[] SUFFIX = {"csv"};
+		String[] fileNameSuffixes = {"csv"};
 		int cpuMultiplyer = 2;
 
 		File indexDirFile = new File(indexDir);
 
 		Collection<File> files;
 		if (indexDirFile.isDirectory()){
-			files = FileUtils.listFiles(indexDirFile, SUFFIX, true);
+			files = FileUtils.listFiles(indexDirFile, fileNameSuffixes, true);
 		} else {
 			files = new ArrayList<File>();
 			files.add(indexDirFile);
 		}
 		
-		logger.info("Indexing files; file count: "+files.size());
+		LOG.info("Indexing files; file count: {}", files.size());
 		
 		Indexer indexer = new Indexer();
 		
@@ -173,12 +180,12 @@ public class Indexer {
 		
 		indexer.index(files, cpuMultiplyer);
 		
-		logger.info("Finished adding records; closing index.");
+		LOG.info("Finished adding records; closing index.");
 		
 		indexer.closeWriter();
 		
 		stopwatch.stop();
 		
-		logger.info("Index finalizated; time: "+stopwatch);
+		LOG.info("Index finalizated; time: {}", stopwatch);
 	}	
 }

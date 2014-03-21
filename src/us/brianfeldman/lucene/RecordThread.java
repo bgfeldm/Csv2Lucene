@@ -7,11 +7,8 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexableField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +25,7 @@ import com.fasterxml.uuid.impl.TimeBasedGenerator;
  * @author Brian G. Feldman <bgfeldm@yahoo.com>
  */
 public class RecordThread implements Runnable {
-	private static final Logger logger = LoggerFactory.getLogger(RecordThread.class);
+	private static final Logger LOG = LoggerFactory.getLogger(RecordThread.class);
 
 	private Map<String, String> record;
 	private IndexWriter writer;
@@ -77,7 +74,7 @@ public class RecordThread implements Runnable {
 			e.printStackTrace();
 		}
 
-		logger.debug("completed: " + record.get("_doc_id"));
+		LOG.debug("completed: {}", record.get("_doc_id"));
 	}
 	
 

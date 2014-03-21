@@ -23,7 +23,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class SimpleCSVReader implements Iterator<Map<String, String>> {
-	private static final Logger logger = LoggerFactory.getLogger(SimpleCSVReader.class);
+	private static final Logger LOG = LoggerFactory.getLogger(SimpleCSVReader.class);
 	
     private String separator = ",";
     private File file;

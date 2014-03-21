@@ -14,7 +14,7 @@ import org.apache.lucene.document.StringField;
 public class DocumentFlyweightPool {
 
 	private transient List<Document> pool;
-	private int poolSize;
+	private final int poolSize;
 	private transient int lastEl;
 
 	/**
@@ -22,7 +22,7 @@ public class DocumentFlyweightPool {
 	 * should be as large or larger then the amount of threads, using this pool.
 	 * @param size
 	 */
-	public DocumentFlyweightPool(int size){
+	public DocumentFlyweightPool(final int size){
 		 this.poolSize=size;
 		 this.pool = new ArrayList<Document>(size);
 	}
@@ -32,7 +32,7 @@ public class DocumentFlyweightPool {
 	 * @param record
 	 * @return
 	 */
-	private Document create(Map<String, String> record){
+	private Document create(final Map<String, String> record){
 		Document doc = new Document();
 		for(String key: record.keySet()){
 			StringField field = new StringField(key, "", Store.YES);
@@ -46,7 +46,7 @@ public class DocumentFlyweightPool {
 	 * 
 	 * @param record
 	 */
-	private void populate(Map<String, String> record){
+	private void populate(final Map<String, String> record){
 		for(int i=0; i < poolSize; i++){
 			Document doc = create(record);
 			pool.add(doc);
@@ -61,7 +61,7 @@ public class DocumentFlyweightPool {
 	 * @param record 
 	 * @return Document
 	 */
-	public synchronized Document getDocument(Map<String, String> record){
+	public synchronized Document getDocument(final Map<String, String> record){
 		if (pool.size() < poolSize){
 			populate(record);
 		}

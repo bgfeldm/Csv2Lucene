@@ -28,8 +28,8 @@ import org.supercsv.prefs.CsvPreference;
  * @author Brian G. Feldman (bgfeldm@yahoo.com)
  *
  */
-public class ComplexCSVReader implements Iterator {
-	private static final Logger logger = LoggerFactory.getLogger(ComplexCSVReader.class);
+public class ComplexCSVReader implements Iterator<Map<String,String>> {
+	private static final Logger LOG = LoggerFactory.getLogger(ComplexCSVReader.class);
 
 	//private static final CsvPreference PIPE_DELIMITED = new CsvPreference.Builder('"', '|', "\n").build();
 	//private static final CsvPreference TILDA_DELIMITED = new CsvPreference.Builder('"', '~', "\n").build();
@@ -64,6 +64,15 @@ public class ComplexCSVReader implements Iterator {
 	}
 	
 	/**
+	 * Get File
+	 * @return file
+	 */
+	public File getFileName(){
+		return this.file.getAbsoluteFile();
+	}
+	
+	
+	/**
 	 * Close CSVFileReader
 	 * @throws IOException
 	 */
@@ -76,16 +85,16 @@ public class ComplexCSVReader implements Iterator {
 	@Override
     public boolean hasNext() {
         try {
-            currentLine = reader.read(header);
+            this.currentLine = reader.read(header);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+        	LOG.error("Failed reading next line.", e);
         }
         return currentLine != null;
     }
 
 	@Override
-	public Object next() {
-		return currentLine;
+	public Map<String, String> next() {
+		return this.currentLine;
 	}
 
 	@Override
