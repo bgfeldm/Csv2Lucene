@@ -38,6 +38,7 @@ public class Searcher {
 	private IndexReader reader;
 	private IndexSearcher searcher;
 	private Stopwatch stopwatch = Stopwatch.createUnstarted();
+	private int indexDocumentCount;
 
 	/**
 	 * @throws IOException
@@ -46,6 +47,7 @@ public class Searcher {
 	    Directory directory = NIOFSDirectory.open(new File(indexPath));
 	    //reader = IndexReader.open(directory);
 	    reader = DirectoryReader.open(directory);
+	    indexDocumentCount = reader.numDocs();
 	    searcher = new IndexSearcher(reader);
 	}
 
@@ -83,7 +85,7 @@ public class Searcher {
 	public void displayResults(ScoreDoc[] hits){
 	    stopwatch.elapsed(TimeUnit.MILLISECONDS);
 	    
-	    System.out.println("Matching Results: "+ hits.length+" ("+stopwatch+")");
+	    System.out.println("Total Documents: "+indexDocumentCount +"; Matching Results: "+ hits.length+" ("+stopwatch+")");
 		
 	    for (int i=0; i<hits.length;++i){
 		       int docId = hits[i].doc;

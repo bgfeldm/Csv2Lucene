@@ -60,7 +60,12 @@
     >
       <classpath refid='compile.classpath'/>
       <link href='http://java.sun.com/javase/7/docs/api/'/>
-      <link href='https://lucene.apache.org/core/4_3_0/core/'/>
+      <link href='https://lucene.apache.org/core/4_7_0/core/'/>
+      <link href='https://lucene.apache.org/core/4_7_0/queryparser/'/>
+      <link href='https://lucene.apache.org/core/4_7_0/queries/'/>
+      <link href='http://javadocs.csveed.org/'/>
+      <link href='http://supercsv.sourceforge.net/apidocs/'/>
+
       <header><![CDATA[<h1>${ant.project.name} ${app.version}</h1>]]></header>
     </javadoc>
 	
@@ -110,6 +115,14 @@
 	     	<classpath location='${build}/dist/${distro-name}.jar'/>
 	     </java>
   </target>
+	
+  <target name='test-beancsv' description=''>
+	         <java classname='us.brianfeldman.fileformat.csv.BeanReader' fork='true'>
+	            <arg line="res/test/test1.csv"/>
+	            <classpath refid='compile.classpath'/>
+	            <classpath location='${build}/dist/${distro-name}.jar'/>
+	         </java>
+  </target>	
 
   <target name='test-simplecsv' description=''>
 	         <java classname='us.brianfeldman.fileformat.csv.SimpleCSVReader' fork='true'>

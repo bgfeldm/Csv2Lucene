@@ -29,8 +29,8 @@ import org.apache.lucene.util.Version;
 
 import com.google.common.base.Stopwatch;
 
-import us.brianfeldman.fileformat.csv.ComplexCSVReader;
-import us.brianfeldman.fileformat.csv.SimpleCSVReader;
+import us.brianfeldman.fileformat.csv.ComplexReader;
+import us.brianfeldman.fileformat.csv.ReadIterator;
 
 /**
  * Lucene Indexer, multi-threaded on Record.
@@ -46,6 +46,8 @@ public class Indexer {
 	private final String indexPath="build/luceneIndex";
 
 	private IndexWriter writer;
+	
+	private ReadIterator csvReader;
 	
 	private final String indexTime = String.valueOf(System.currentTimeMillis() / 1000l);
 	
@@ -63,7 +65,8 @@ public class Indexer {
 	}
 	
 	
-	public Indexer() throws IOException{
+	public Indexer(ReadIterator csvReader){
+		this.csvReader = csvReader;
 		openWriter();
 	}
 
@@ -71,7 +74,7 @@ public class Indexer {
 	 * Open Lucene Index Writer.
 	 * @throws IOException
 	 */
-	public void openWriter() throws IOException {
+	public void openWriter() {
 		File indexPathFile = new File(indexPath);
 		LOG.info("Opening index writer at: "+indexPathFile.getAbsolutePath());
 		
@@ -83,6 +86,7 @@ public class Indexer {
 		// But if you do this, increase the max heap size to the JVM (eg add -Xmx512m or -Xmx1g):
 		// iwc.setRAMBufferSizeMB(256.0);
 		iwc.setRAMBufferSizeMB(256.0);
+		iwc.setMaxBufferedDocs(1000);
 
 		try {
 		    Directory directory = NIOFSDirectory.open(indexPathFile);
@@ -122,14 +126,13 @@ public class Indexer {
 		while(fileIterator.hasNext()){
 		     File file = fileIterator.next();
 		     LOG.info("Indexing file: {}", file.getAbsolutePath());
-
-		     //SimpleCSVReader reader = new SimpleCSVReader(file, ",");
-		     ComplexCSVReader reader = new ComplexCSVReader(file);
 		     
-		     while(reader.hasNext() ){
-		         while(reader.hasNext() && recordQueue.remainingCapacity() != 0){
-		              Map<String, String> record = reader.next();
-	                  record.put("_doc_id", reader.getFileName()+":"+reader.getLineNumber());
+		     csvReader.open(file);
+		     
+		     while(csvReader.hasNext() ){
+		         while(csvReader.hasNext() && recordQueue.remainingCapacity() != 0){
+		              Map<String, String> record = (Map<String, String>) csvReader.next();
+	                  record.put("_doc_id", csvReader.getFileName() + ":" + csvReader.getLineNumber());
 	                  record.put("_index_time", indexTime);
 	                  recordQueue.add(new RecordThread(record, docFlyweightPool, writer));
 		         }
@@ -140,6 +143,8 @@ public class Indexer {
 		                      // ignore.
 		         }
 		     }
+		     
+		     //csvReader.close();
 		}
 
 		executor.shutdown();
@@ -173,13 +178,16 @@ public class Indexer {
 		}
 		
 		LOG.info("Indexing files; file count: {}", files.size());
-		
-		Indexer indexer = new Indexer();
+
+	    //SimpleReader csvReader = new SimpleReader(",");
+	    ComplexReader csvReader = new ComplexReader(',');
+	
+		Indexer indexer = new Indexer(csvReader);
 		
 		Stopwatch stopwatch = Stopwatch.createStarted();
 		
 		indexer.index(files, cpuMultiplyer);
-		
+
 		LOG.info("Finished adding records; closing index.");
 		
 		indexer.closeWriter();
