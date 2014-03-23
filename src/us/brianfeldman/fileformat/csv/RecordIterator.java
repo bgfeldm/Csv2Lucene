@@ -13,7 +13,7 @@ import java.util.Iterator;
  * @author Brian G. Feldman <bgfeldm@yahoo.com>
  *
  */
-public interface ReadIterator extends Iterator<Object> {
+public interface RecordIterator extends Iterator<Object> {
 	
 	/**
 	 * Get File Name

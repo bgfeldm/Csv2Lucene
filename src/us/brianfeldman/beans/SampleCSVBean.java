@@ -38,8 +38,12 @@ public class SampleCSVBean {
 	@CsvCell(columnName = "numer")
 	private int number;
 
-	public void setName(String name){
+	public void setName(final String name){
 		this.name=name;
+	}
+
+	public int getNumber(){
+		return this.number;
 	}
 
 	public String getName(){ 
@@ -49,7 +53,7 @@ public class SampleCSVBean {
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main(final String[] args) {
 	    Reader reader = new StringReader(
                 "name,number,date\n"+
                 "\"Alpha\",1900,\"13-07-1922\"\n"+

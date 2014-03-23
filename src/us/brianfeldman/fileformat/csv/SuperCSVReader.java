@@ -29,8 +29,8 @@ import org.supercsv.prefs.CsvPreference;
  *
  * @link http://supercsv.sourceforge.net/apidocs/
  */
-public class ComplexReader implements ReadIterator {
-	private static final Logger LOG = LoggerFactory.getLogger(ComplexReader.class);
+public class SuperCSVReader implements RecordIterator {
+	private static final Logger LOG = LoggerFactory.getLogger(SuperCSVReader.class);
 
 	private File file;
     private Map<String, String> currentLine;
@@ -38,12 +38,12 @@ public class ComplexReader implements ReadIterator {
     private String[]      header;
     private CsvPreference csvPreference;
 
-    public ComplexReader(int separator){
+    public SuperCSVReader(final char separator){
     	csvPreference = new CsvPreference.Builder('"', separator, "\n").build();
     }
     
     @Override
-	public void open(File file) throws IOException{
+	public void open(final File file) throws IOException{
 		 this.file=file;
 		 InputStream inputStream = new FileInputStream(file);
 		 // inputStream.skip(8); // Skip over first couple byes of file.
@@ -52,7 +52,7 @@ public class ComplexReader implements ReadIterator {
 	}
 
 	@Override
-	public void open(String textBlob) {
+	public void open(final String textBlob) {
 		Reader reader = new StringReader(textBlob);
 		this.csvReader = new CsvMapReader(reader, csvPreference);
 		try {
@@ -109,10 +109,10 @@ public class ComplexReader implements ReadIterator {
 	 * @param args
 	 * @throws IOException 
 	 */
-	public static void main(String[] args) throws IOException {
+	public static void main(final String[] args) throws IOException {
 		String filename = args[0];
 		
-		ComplexReader reader = new ComplexReader(',');
+		SuperCSVReader reader = new SuperCSVReader(',');
 		reader.open(new File(filename));
 		
 		while( reader.hasNext() ){

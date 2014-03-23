@@ -29,8 +29,9 @@ import org.apache.lucene.util.Version;
 
 import com.google.common.base.Stopwatch;
 
-import us.brianfeldman.fileformat.csv.ComplexReader;
-import us.brianfeldman.fileformat.csv.ReadIterator;
+import us.brianfeldman.fileformat.csv.SuperCSVReader;
+import us.brianfeldman.fileformat.csv.JacksonCSVReader;
+import us.brianfeldman.fileformat.csv.RecordIterator;
 
 /**
  * Lucene Indexer, multi-threaded on Record.
@@ -47,12 +48,14 @@ public class Indexer {
 
 	private IndexWriter writer;
 	
-	private ReadIterator csvReader;
+	private final RecordIterator csvReader;
 	
 	private final String indexTime = String.valueOf(System.currentTimeMillis() / 1000l);
 	
 	private BlockingQueue<Runnable> recordQueue;   // Record represents a line from a CSV file.
 	
+	private int doneFileCount = 0;
+	private int totalFileCount = 0;
 	
 	static {
 		Properties props = new Properties();
@@ -65,7 +68,7 @@ public class Indexer {
 	}
 	
 	
-	public Indexer(ReadIterator csvReader){
+	public Indexer(RecordIterator csvReader){
 		this.csvReader = csvReader;
 		openWriter();
 	}
@@ -90,6 +93,10 @@ public class Indexer {
 
 		try {
 		    Directory directory = NIOFSDirectory.open(indexPathFile);
+		    if ( IndexWriter.isLocked(directory) ){
+				LOG.error("Index Directory is Locked");
+		    	//IndexWriter.unlock(directory);
+		    }
 			writer = new IndexWriter(directory, iwc);
 		} catch (IOException e) {
 			LOG.error("Failed to open index writer", e);
@@ -114,7 +121,7 @@ public class Indexer {
 	 * @throws IOException
 	 */
 	public void index(final Collection<File> files, final int cpuMultiplier) throws IOException{
-		final int maxThreads = (CPU_PROCESSORS * cpuMultiplier);
+		final int maxThreads = CPU_PROCESSORS * cpuMultiplier;
 		LOG.debug("maxthreads: {}", maxThreads);
 
 		recordQueue = new ArrayBlockingQueue<Runnable>(maxThreads*2, true);
@@ -123,15 +130,16 @@ public class Indexer {
 		executor.prestartAllCoreThreads();
 
 		Iterator<File> fileIterator = files.iterator();
-		while(fileIterator.hasNext()){
+		totalFileCount = files.size();
+		for(doneFileCount=1; fileIterator.hasNext(); doneFileCount++){
 		     File file = fileIterator.next();
-		     LOG.info("Indexing file: {}", file.getAbsolutePath());
+		     LOG.info("Indexing file {} of {} : {}", doneFileCount, totalFileCount, file.getAbsolutePath());
 		     
 		     csvReader.open(file);
 		     
 		     while(csvReader.hasNext() ){
 		         while(csvReader.hasNext() && recordQueue.remainingCapacity() != 0){
-		              Map<String, String> record = (Map<String, String>) csvReader.next();
+					Map<String, String> record = (Map<String, String>) csvReader.next();
 	                  record.put("_doc_id", csvReader.getFileName() + ":" + csvReader.getLineNumber());
 	                  record.put("_index_time", indexTime);
 	                  recordQueue.add(new RecordThread(record, docFlyweightPool, writer));
@@ -179,9 +187,11 @@ public class Indexer {
 		
 		LOG.info("Indexing files; file count: {}", files.size());
 
-	    //SimpleReader csvReader = new SimpleReader(",");
-	    ComplexReader csvReader = new ComplexReader(',');
-	
+	    //SimpleReader csvReader = new SimpleReader(',');
+	    SuperCSVReader csvReader = new SuperCSVReader(',');
+	    //JacksonCsvReader csvReader = new JacksonReader(',');
+	    //OpenCSVReader csvReader = new OpenCSVReader(',');
+	    
 		Indexer indexer = new Indexer(csvReader);
 		
 		Stopwatch stopwatch = Stopwatch.createStarted();

@@ -24,27 +24,27 @@ import us.brianfeldman.beans.SampleCSVBean;
  * @link http://javadocs.csveed.org/
  *
  */
-public class BeanReader implements ReadIterator {
+public class BeanReader implements RecordIterator {
 	private static final Logger LOG = LoggerFactory.getLogger(BeanReader.class);
 
 	private File file;
 	private int lineNumber;
 	private CsvReader<?> csvReader;
-	private Class<?> beanClass;
+	final private Class<?> beanClass;
 
 	public BeanReader(Class beanClass){
 		this.beanClass = beanClass;
 	}
 
 	@Override
-	public void open(File file) throws IOException {
+	public void open(final File file) throws IOException {
 		this.file = file;
 		Reader reader = new FileReader(file);
 		csvReader = new CsvReaderImpl(reader, beanClass);
 	}
 
 	@Override
-	public void open(String textBlob){
+	public void open(final String textBlob){
 		this.file = null;
 		Reader reader = new StringReader(textBlob);
 		csvReader = new CsvReaderImpl(reader, beanClass);
@@ -87,7 +87,7 @@ public class BeanReader implements ReadIterator {
 	 * @param args
 	 * @throws IOException 
 	 */
-	public static void main(String[] args){
+	public static void main(final String[] args){
 	    String textBlob =
                 "name,number,date\n"+
                 "\"Alpha\",1900,\"13-07-1922\"\n"+

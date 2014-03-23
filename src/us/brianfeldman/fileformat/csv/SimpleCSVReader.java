@@ -25,10 +25,10 @@ import org.slf4j.LoggerFactory;
  * @author Brian G. Feldman (bgfeldm@yahoo.com)
  *
  */
-public class SimpleReader implements ReadIterator {
-	private static final Logger LOG = LoggerFactory.getLogger(SimpleReader.class);
+public class SimpleCSVReader implements RecordIterator {
+	private static final Logger LOG = LoggerFactory.getLogger(SimpleCSVReader.class);
 	
-    private String separator;
+    final private String separator;
     private File file;
     private BufferedReader reader;
     private String[] header;
@@ -42,12 +42,12 @@ public class SimpleReader implements ReadIterator {
      * @param separator 
      * @throws IOException
      */
-    public SimpleReader(String separator) {
-         this.separator = separator;
+    public SimpleCSVReader(final char separator) {
+         this.separator = Character.toString(separator);
     }
 
 	@Override
-	public void open(File file) throws IOException {
+	public void open(final File file) throws IOException {
 		 this.file = file;
 		 FileInputStream fstream = new FileInputStream(file);
          //fstream.skip(8); // trim off magic header.
@@ -59,7 +59,7 @@ public class SimpleReader implements ReadIterator {
 	}
 
 	@Override
-	public void open(String textBlob) {
+	public void open(final String textBlob) {
 		this.file = null;
         InputStream is = new ByteArrayInputStream(textBlob.getBytes());
         this.reader = new BufferedReader(new InputStreamReader(is));
@@ -132,10 +132,10 @@ public class SimpleReader implements ReadIterator {
 	 * @param args
 	 * @throws IOException 
 	 */
-	public static void main(String[] args) throws IOException {
+	public static void main(final String[] args) throws IOException {
 		String filename = args[0];
 		
-		SimpleReader reader = new SimpleReader(",");
+		SimpleCSVReader reader = new SimpleCSVReader(',');
 		reader.open( new File(filename) );
 		
 		while(reader.hasNext()){
