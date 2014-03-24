@@ -3,8 +3,13 @@
  */
 package us.brianfeldman.fileformat.csv;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -13,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.MappingIterator;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import com.google.common.base.Stopwatch;
 
 /**
  * JacksonReader
@@ -64,7 +70,8 @@ public class JacksonCSVReader implements RecordIterator  {
 	@Override
 	public void open(File file) throws IOException {
 		this.file = file;
-		iterator = new CsvMapper().reader(Map.class).with(csvSchema).readValues( file );
+		Reader reader = new BufferedReader(new FileReader( file ));
+		iterator = new CsvMapper().reader(Map.class).with(csvSchema).readValues( reader );
 	}
 
 	@Override
@@ -88,12 +95,17 @@ public class JacksonCSVReader implements RecordIterator  {
 	public static void main(String[] args) throws IOException {
 		String filename = args[0];
 
+		Stopwatch stopwatch = Stopwatch.createStarted();
+		
 		JacksonCSVReader reader = new JacksonCSVReader(",");
 		reader.open( new File(filename) );
 
-		while(reader.hasNext()){
-			System.out.println(reader.next());
+		for(int c=1; reader.hasNext(); c++){
+			System.out.println(c+" " + reader.next().toString());
 		}
 		reader.close();
+		
+		stopwatch.stop();
+		System.out.println("time: "+stopwatch);
 	}
 }

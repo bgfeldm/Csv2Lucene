@@ -19,6 +19,8 @@ import org.supercsv.io.CsvMapReader;
 import org.supercsv.io.ICsvMapReader;
 import org.supercsv.prefs.CsvPreference;
 
+import com.google.common.base.Stopwatch;
+
 /**
  * ComplexCSVReader 
  * 
@@ -112,14 +114,18 @@ public class SuperCSVReader implements RecordIterator {
 	public static void main(final String[] args) throws IOException {
 		String filename = args[0];
 		
+		Stopwatch stopwatch = Stopwatch.createStarted();
+		
 		SuperCSVReader reader = new SuperCSVReader(',');
 		reader.open(new File(filename));
 		
-		while( reader.hasNext() ){
-			System.out.println(reader.next().toString());
+		for(int c=1; reader.hasNext(); c++){
+			System.out.println(c+" " + reader.next().toString());
 		}
 		reader.close();
 		
+		stopwatch.stop();
+		System.out.println("time: "+stopwatch);
 	}
 
 

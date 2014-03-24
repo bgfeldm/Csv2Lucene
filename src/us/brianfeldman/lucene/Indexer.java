@@ -29,6 +29,7 @@ import org.apache.lucene.util.Version;
 
 import com.google.common.base.Stopwatch;
 
+import us.brianfeldman.fileformat.csv.OpenCSVReader;
 import us.brianfeldman.fileformat.csv.SuperCSVReader;
 import us.brianfeldman.fileformat.csv.JacksonCSVReader;
 import us.brianfeldman.fileformat.csv.RecordIterator;
@@ -87,10 +88,9 @@ public class Indexer {
 		
 		// Optional: for better indexing performance, increase the RAM buffer.  
 		// But if you do this, increase the max heap size to the JVM (eg add -Xmx512m or -Xmx1g):
-		// iwc.setRAMBufferSizeMB(256.0);
-		iwc.setRAMBufferSizeMB(256.0);
-		iwc.setMaxBufferedDocs(1000);
-
+		//iwc.setRAMBufferSizeMB(64);   // lucene's default is 16 MB.
+		iwc.setMaxThreadStates(16);  // default is 8.  Max threads communicating with the writer.
+		
 		try {
 		    Directory directory = NIOFSDirectory.open(indexPathFile);
 		    if ( IndexWriter.isLocked(directory) ){
@@ -101,6 +101,7 @@ public class Indexer {
 		} catch (IOException e) {
 			LOG.error("Failed to open index writer", e);
 		}
+		
 	}
 
 	/**
@@ -124,7 +125,7 @@ public class Indexer {
 		final int maxThreads = CPU_PROCESSORS * cpuMultiplier;
 		LOG.debug("maxthreads: {}", maxThreads);
 
-		recordQueue = new ArrayBlockingQueue<Runnable>(maxThreads*2, true);
+		recordQueue = new ArrayBlockingQueue<Runnable>(maxThreads*10, true);
 	    DocumentFlyweightPool docFlyweightPool = new DocumentFlyweightPool(maxThreads);
 		ThreadPoolExecutor executor = new ThreadPoolExecutor(maxThreads, maxThreads, 1, TimeUnit.MINUTES, recordQueue, new ThreadPoolExecutor.CallerRunsPolicy() );
 		executor.prestartAllCoreThreads();
@@ -187,11 +188,14 @@ public class Indexer {
 		
 		LOG.info("Indexing files; file count: {}", files.size());
 
+		/*
+		 * Four build-in csv parsers, listed from fastest to slowest.
+		 */
+		OpenCSVReader csvReader = new OpenCSVReader(',');
+		//SuperCSVReader csvReader = new SuperCSVReader(',');
 	    //SimpleReader csvReader = new SimpleReader(',');
-	    SuperCSVReader csvReader = new SuperCSVReader(',');
 	    //JacksonCsvReader csvReader = new JacksonReader(',');
-	    //OpenCSVReader csvReader = new OpenCSVReader(',');
-	    
+
 		Indexer indexer = new Indexer(csvReader);
 		
 		Stopwatch stopwatch = Stopwatch.createStarted();

@@ -10,12 +10,15 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Stopwatch;
 
 import au.com.bytecode.opencsv.CSVReader;
 
@@ -67,7 +70,7 @@ public class OpenCSVReader implements RecordIterator {
 		if (line==null){ return null; }
 
 		Map<String, String> retMap = new HashMap<String, String>();
-		for(int c=0; c < line.length; c++){
+		for(int c=0; c < header.length; c++){
 			retMap.put(header[c], line[c]);
 		}
 
@@ -117,13 +120,18 @@ public class OpenCSVReader implements RecordIterator {
 	public static void main(String[] args) throws IOException {
 		String filename = args[0];
 		
+		Stopwatch stopwatch = Stopwatch.createStarted();
+		
 		OpenCSVReader reader = new OpenCSVReader(',');
 		reader.open(new File(filename));
 
-		while( reader.hasNext() ){
-			System.out.println(reader.next().toString());
+		for(int c=1; reader.hasNext(); c++){
+			//System.out.println(c+" " + reader.next().toString());
 		}
 		reader.close();
+
+		stopwatch.stop();
+		System.out.println("time: "+stopwatch);
 	}
 
 }

@@ -40,7 +40,7 @@
       	<attribute name='Specification-Version' value='${app.version}' />
         <attribute name='Implementation-Version' value='${app.version} ${build.time}'/> 
       	<attribute name='Built-By' value='Brian G. Feldman bgfeldm@yahoo.com'/>
-        <attribute name='Main-Class' value='us.brianfeldman.csv2lucene.IndexCsv'/>
+        <attribute name='Main-Class' value='us.brianfeldman.lucene.Indexer'/>
       </manifest>
     </jar>
 
@@ -91,8 +91,9 @@
 
   <target name='run-Index' description=''>
 	 <java classname="us.brianfeldman.lucene.Indexer" fork='true'>
-	    <jvmarg value="-Xms512m"/>
-	 	<jvmarg value="-Xmx512m"/>
+	 	<jvmarg value="-server"/>
+	    <jvmarg value="-Xms256m"/>
+	 	<jvmarg value="-Xmx1g"/>
         <classpath location='${build}/dist/${distro-name}.jar'/>
 	 	<classpath refid='compile.classpath'/>
 	 	<arg line="res/test"/>
@@ -108,21 +109,9 @@
      </java>
   </target>
 
-  <target name='test-supercsv' description=''>
-	     <java classname='us.brianfeldman.fileformat.csv.SuperCSVReader' fork='true'>
-	     	<arg line="res/test/test1.csv"/>
-	        <classpath refid='compile.classpath'/>
-	     	<classpath location='${build}/dist/${distro-name}.jar'/>
-	     </java>
-  </target>
+
 	
-	  <target name='test-jacksoncsv' description=''>
-	         <java classname='us.brianfeldman.fileformat.csv.JacksonCSVReader' fork='true'>
-	            <arg line="res/test/test1.csv"/>
-	            <classpath refid='compile.classpath'/>
-	            <classpath location='${build}/dist/${distro-name}.jar'/>
-	         </java>
-	  </target>
+
 	
   <target name='test-beancsv' description=''>
 	         <java classname='us.brianfeldman.fileformat.csv.BeanReader' fork='true'>
@@ -139,13 +128,30 @@
 	            <classpath location='${build}/dist/${distro-name}.jar'/>
 	         </java>
   </target>
-	
+
+
+  <target name='test-jacksoncsv' description=''>
+	            <java classname='us.brianfeldman.fileformat.csv.JacksonCSVReader' fork='true'>
+	                <arg line="res/test/WHO_TB_notifications_2014-03-23.csv"/>
+	                <classpath refid='compile.classpath'/>
+	                <classpath location='${build}/dist/${distro-name}.jar'/>
+	            </java>
+  </target>  	
+  	
   <target name='test-opencsv' description=''>
              <java classname='us.brianfeldman.fileformat.csv.OpenCSVReader' fork='true'>
-                <arg line="res/test/test1.csv"/>
+                <arg line="res/test/cbp11co.csv"/>
                 <classpath refid='compile.classpath'/>
                 <classpath location='${build}/dist/${distro-name}.jar'/>
              </java>
-  </target> 	
+  </target>
+
+  <target name='test-supercsv' description=''>
+	         <java classname='us.brianfeldman.fileformat.csv.SuperCSVReader' fork='true'>
+	            <arg line="res/test/WHO_TB_notifications_2014-03-23.csv"/>
+	            <classpath refid='compile.classpath'/>
+	            <classpath location='${build}/dist/${distro-name}.jar'/>
+	         </java>
+  </target>
 </project>
 

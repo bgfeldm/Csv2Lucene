@@ -17,6 +17,8 @@ import java.util.Scanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Stopwatch;
+
 /**
  * Reader returns Map for each CSV row.
  *  
@@ -135,14 +137,18 @@ public class SimpleCSVReader implements RecordIterator {
 	public static void main(final String[] args) throws IOException {
 		String filename = args[0];
 		
+		Stopwatch stopwatch = Stopwatch.createStarted();
+		
 		SimpleCSVReader reader = new SimpleCSVReader(',');
 		reader.open( new File(filename) );
 		
-		while(reader.hasNext()){
-			System.out.println(reader.next());
+		for(int c=1; reader.hasNext(); c++){
+			System.out.println(c+" " + reader.next().toString());
 		}
 		reader.close();
 		
+		stopwatch.stop();
+		System.out.println("time: "+stopwatch);
 	}
 
 }

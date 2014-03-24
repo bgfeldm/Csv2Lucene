@@ -21,3 +21,9 @@ Advantages of threading on the record level instead of by file:
 Note: More than one file can be read at a time, when reading the tail end of one file
 the beginning of the next file is read, keeping a continuous flow of record lines 
 until the last record of the last file is read.
+
+Currently Supported build-in CSV Parsers with times:
+#   Paser           10 small records    7023 w/ 15 columns.
+    OpenCsv          2.8ms              7.5s
+    SuperCsv         6.8ms              13.5 s
+    Jackson-csv    200.8ms              10.8 s
