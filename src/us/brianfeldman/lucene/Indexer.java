@@ -88,9 +88,9 @@ public class Indexer {
 		
 		// Optional: for better indexing performance, increase the RAM buffer.  
 		// But if you do this, increase the max heap size to the JVM (eg add -Xmx512m or -Xmx1g):
-		//iwc.setRAMBufferSizeMB(64);   // lucene's default is 16 MB.
+		iwc.setRAMBufferSizeMB(64);   // lucene's default is 16 MB.
 		iwc.setMaxThreadStates(16);  // default is 8.  Max threads communicating with the writer.
-		
+
 		try {
 		    Directory directory = NIOFSDirectory.open(indexPathFile);
 		    if ( IndexWriter.isLocked(directory) ){
@@ -126,7 +126,6 @@ public class Indexer {
 		LOG.debug("maxthreads: {}", maxThreads);
 
 		recordQueue = new ArrayBlockingQueue<Runnable>(maxThreads*10, true);
-	    DocumentFlyweightPool docFlyweightPool = new DocumentFlyweightPool(maxThreads);
 		ThreadPoolExecutor executor = new ThreadPoolExecutor(maxThreads, maxThreads, 1, TimeUnit.MINUTES, recordQueue, new ThreadPoolExecutor.CallerRunsPolicy() );
 		executor.prestartAllCoreThreads();
 
@@ -143,11 +142,11 @@ public class Indexer {
 					Map<String, String> record = (Map<String, String>) csvReader.next();
 	                  record.put("_doc_id", csvReader.getFileName() + ":" + csvReader.getLineNumber());
 	                  record.put("_index_time", indexTime);
-	                  recordQueue.add(new RecordThread(record, docFlyweightPool, writer));
+	                  recordQueue.add(new RecordThread(record, writer));
 		         }
 
 		         try{
-		                Thread.sleep(20);
+		                Thread.sleep(10);
 		         } catch (InterruptedException e){
 		                      // ignore.
 		         }
