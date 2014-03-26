@@ -76,6 +76,7 @@ public class Indexer {
 
 	/**
 	 * Open Lucene Index Writer.
+	 * 
 	 * @throws IOException
 	 */
 	public void openWriter() {
@@ -85,11 +86,13 @@ public class Indexer {
 		final Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
 		IndexWriterConfig iwc = new IndexWriterConfig(Version.LUCENE_47, analyzer);
 		iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
-		
+
 		// Optional: for better indexing performance, increase the RAM buffer.  
 		// But if you do this, increase the max heap size to the JVM (eg add -Xmx512m or -Xmx1g):
-		iwc.setRAMBufferSizeMB(64);   // lucene's default is 16 MB.
+		iwc.setRAMBufferSizeMB(128);   // lucene's default is 16 MB.
 		iwc.setMaxThreadStates(16);  // default is 8.  Max threads communicating with the writer.
+		iwc.setUseCompoundFile(false);
+		iwc.setWriteLockTimeout(5000);
 
 		try {
 		    Directory directory = NIOFSDirectory.open(indexPathFile);
@@ -104,19 +107,30 @@ public class Indexer {
 		
 	}
 
+	
 	/**
-	 * Close Lucene Index Writer.
+	 * Close Lucene Index Writer
+	 * 
+	 * Commits all changes to an index, waits for pending merges to complete, and closes all associated files.
+	 * 
 	 * @throws IOException
 	 */
 	public void closeWriter() throws IOException{
 		LOG.info("Closing index writer");
 		if (writer != null){
-			writer.close();
+			try{
+				writer.close();
+			} catch(OutOfMemoryError e){
+				LOG.error("Out of Memory while closing writer. Trying again...", e);
+				writer.close();
+			}
 		}
 	}
 	
+	
 	/**
 	 * Index Directory of CSV files.
+	 * 
 	 * @param files array of files to index
 	 * @param cpuMultiplier 
 	 * @throws IOException

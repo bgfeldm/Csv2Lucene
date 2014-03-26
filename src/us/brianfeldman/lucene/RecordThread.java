@@ -47,12 +47,13 @@ public class RecordThread implements Runnable {
 		this.record=record;
 		this.writer=writer;
 	}
-	
-	@Override
-	public void run() {
 
-        //record.put("_uuid", generateUUID());
-		
+	/**
+	 * Build Lucene Document.
+	 * 
+	 * @return Document
+	 */
+	public Document buildLuceneDocument(){
 		this.document = tlocal.get();
 		
 		if (document==null){
@@ -68,17 +69,39 @@ public class RecordThread implements Runnable {
 				field.setStringValue( record.get(key).toLowerCase().trim() );
 			}
 		}
+		
+		return document;
+	}
 
-
+	
+	/**
+	 * Add Document to Index.
+	 */
+	public void addToIndex(){
 		try {
 			writer.addDocument(document);
-			LOG.debug("completed: {}", record.get("_doc_id"));
+			//LOG.debug("completed: {}", record.get("_doc_id"));
 		} catch (IOException e) {
 			LOG.error("Failed writing document {}",  record.get("_doc_id"), e);
+		} catch(OutOfMemoryError e){
+			LOG.error("Due to Out of Memory Error, Closing Index Writer.", e);  
+			try {
+				writer.close();   // This will effect all threads.
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		}
-
 	}
 	
+	@Override
+	public void run() {
+	        //record.put("_uuid", generateUUID());
+
+			buildLuceneDocument();
+	
+			addToIndex();			
+	}
+
 	/*
 	private String generateUUID(){
 		return uuidGenerator.generate().toString();
