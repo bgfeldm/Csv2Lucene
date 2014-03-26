@@ -92,11 +92,11 @@
   <target name='run-Index' description=''>
 	 <java classname="us.brianfeldman.lucene.Indexer" fork='true'>
 	 	<jvmarg value="-server"/>
-	    <jvmarg value="-Xms256m"/>
+	    <jvmarg value="-Xms512m"/>
 	 	<jvmarg value="-Xmx1g"/>
         <classpath location='${build}/dist/${distro-name}.jar'/>
 	 	<classpath refid='compile.classpath'/>
-	 	<arg line="res/test"/>
+	 	<arg line="res/test/cbp11co.csv"/>
 	 </java>
   </target>
 
