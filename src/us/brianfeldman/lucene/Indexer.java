@@ -29,6 +29,7 @@ import org.apache.lucene.util.Version;
 
 import com.google.common.base.Stopwatch;
 
+import us.brianfeldman.fileformat.csv.JCSVReader;
 import us.brianfeldman.fileformat.csv.OpenCSVReader;
 import us.brianfeldman.fileformat.csv.SuperCSVReader;
 import us.brianfeldman.fileformat.csv.JacksonCSVReader;
@@ -202,9 +203,10 @@ public class Indexer {
 		LOG.info("Indexing files; file count: {}", files.size());
 
 		/*
-		 * Four build-in csv parsers, listed from fastest to slowest.
+		 * Five build-in csv parsers, listed from fastest to slowest.
 		 */
-		OpenCSVReader csvReader = new OpenCSVReader(',');
+		JCSVReader csvReader = new JCSVReader(',');
+		//OpenCSVReader csvReader = new OpenCSVReader(',');
 		//SuperCSVReader csvReader = new SuperCSVReader(',');
 	    //SimpleReader csvReader = new SimpleReader(',');
 	    //JacksonCsvReader csvReader = new JacksonReader(',');

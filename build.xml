@@ -136,7 +136,15 @@
 	                <classpath refid='compile.classpath'/>
 	                <classpath location='${build}/dist/${distro-name}.jar'/>
 	            </java>
-  </target>  	
+  </target>
+	
+  <target name='test-jcsv' description=''>
+	                <java classname='us.brianfeldman.fileformat.csv.JCSVReader' fork='true'>
+	                    <arg line="res/test/WHO_TB_notifications_2014-03-23.csv"/>
+	                    <classpath refid='compile.classpath'/>
+	                    <classpath location='${build}/dist/${distro-name}.jar'/>
+	                </java>
+  </target> 	
   	
   <target name='test-opencsv' description=''>
              <java classname='us.brianfeldman.fileformat.csv.OpenCSVReader' fork='true'>
