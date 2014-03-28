@@ -29,7 +29,8 @@ import com.fasterxml.uuid.impl.TimeBasedGenerator;
 public class RecordThread implements Runnable {
 	private static final Logger LOG = LoggerFactory.getLogger(RecordThread.class);
 
-	private Map<String, String> record;
+	private String[] record;
+	private String[] header;
 	private IndexWriter writer;
 		
     private static final ThreadLocal<Document> tlocal = new ThreadLocal<Document>();
@@ -38,12 +39,14 @@ public class RecordThread implements Runnable {
 	//private RandomBasedGenerator uuidGenerator = Generators.randomBasedGenerator();
 
 	/**
-	 * Constructor 
+	 * Constructor
 	 * 
+	 * @param header 
 	 * @param record
 	 * @param writer
 	 */
-	public RecordThread(Map<String, String> record, IndexWriter writer){
+	public RecordThread(String[] header, String[] record, IndexWriter writer){
+		this.header=header;
 		this.record=record;
 		this.writer=writer;
 	}
@@ -59,14 +62,14 @@ public class RecordThread implements Runnable {
 		if (document==null){
 			document = new Document();
 			LOG.debug("Initializing document.");
-			for(String key: record.keySet()){
-				document.add(new StringField(key, record.get(key).toLowerCase().trim(), Store.YES));
+			for(int i=0; i < header.length; i++){
+				document.add(new StringField(header[i], record[i].toLowerCase().trim(), Store.YES));
 			}
 			tlocal.set(document);
 		} else {
-			for(String key: record.keySet()){
-				StringField field = (StringField) document.getField(key);
-				field.setStringValue( record.get(key).toLowerCase().trim() );
+			for(int i=0; i < header.length; i++){
+				StringField field = (StringField) document.getField( header[i] );
+				field.setStringValue( record[i].toLowerCase().trim() );
 			}
 		}
 		
@@ -82,7 +85,7 @@ public class RecordThread implements Runnable {
 			writer.addDocument(document);
 			//LOG.debug("completed: {}", record.get("_doc_id"));
 		} catch (IOException e) {
-			LOG.error("Failed writing document {}",  record.get("_doc_id"), e);
+			//LOG.error("Failed writing document {}",  record.get("_doc_id"), e);
 		} catch(OutOfMemoryError e){
 			LOG.error("Due to Out of Memory Error, Closing Index Writer.", e);  
 			try {

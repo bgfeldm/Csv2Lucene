@@ -28,6 +28,13 @@ public interface RecordIterator extends Iterator<Object> {
 	 * @return line number
 	 */
 	public int getLineNumber();
+
+	/**
+	 * Get header
+	 * 
+	 * @return line number
+	 */
+	public String[] getHeader();
 	
 	/**
 	 * Open reading on a File.

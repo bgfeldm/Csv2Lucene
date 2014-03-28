@@ -32,7 +32,6 @@ import com.google.common.base.Stopwatch;
 import us.brianfeldman.fileformat.csv.JCSVReader;
 import us.brianfeldman.fileformat.csv.OpenCSVReader;
 import us.brianfeldman.fileformat.csv.SuperCSVReader;
-import us.brianfeldman.fileformat.csv.JacksonCSVReader;
 import us.brianfeldman.fileformat.csv.RecordIterator;
 
 /**
@@ -152,12 +151,13 @@ public class Indexer {
 		     
 		     csvReader.open(file);
 		     
+		     String[] header = csvReader.getHeader();
 		     while(csvReader.hasNext() ){
 		         while(csvReader.hasNext() && recordQueue.remainingCapacity() != 0){
-					Map<String, String> record = (Map<String, String>) csvReader.next();
-	                  record.put("_doc_id", csvReader.getFileName() + ":" + csvReader.getLineNumber());
-	                  record.put("_index_time", indexTime);
-	                  recordQueue.add(new RecordThread(record, writer));
+					  String[] record = (String[]) csvReader.next();
+	                  //record.put("_doc_id", csvReader.getFileName() + ":" + csvReader.getLineNumber());
+	                  //record.put("_index_time", indexTime);
+	                  recordQueue.add(new RecordThread(header, record, writer));
 		         }
 
 		         try{
@@ -209,7 +209,6 @@ public class Indexer {
 		//OpenCSVReader csvReader = new OpenCSVReader(',');
 		//SuperCSVReader csvReader = new SuperCSVReader(',');
 	    //SimpleReader csvReader = new SimpleReader(',');
-	    //JacksonCsvReader csvReader = new JacksonReader(',');
 
 		Indexer indexer = new Indexer(csvReader);
 		

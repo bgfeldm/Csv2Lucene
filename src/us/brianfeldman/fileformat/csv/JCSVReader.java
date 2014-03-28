@@ -54,33 +54,8 @@ public class JCSVReader implements RecordIterator {
     }
 
 	@Override
-	public Map<String, String> next(){
-		Map<String, String> currentLine = null;;
-		currentLineNumber++;
-		try {
-			currentLine = nextMap();
-		} catch (IOException e) {
-			LOG.error("Failed reading line {}:{}", this.file.getAbsolutePath(), currentLineNumber, e);
-		}
-		return currentLine;
-	}
-
-	/**
-	 * Get Map of Next CSV Record Line.
-	 * 
-	 * @return Map
-	 * @throws IOException
-	 */
-	private Map<String, String> nextMap() throws IOException{
-		String[] line = csvIterator.next();
-		if (line==null){ return null; }
-
-		Map<String, String> retMap = new HashMap<String, String>();
-		for(int c=0; c < header.length; c++){
-			retMap.put(header[c], line[c]);
-		}
-
-		return retMap;
+	public String[] next(){
+		return csvIterator.next();
 	}
 
 	@Override
@@ -88,6 +63,11 @@ public class JCSVReader implements RecordIterator {
 		throw new UnsupportedOperationException("CsvIterator does not support remove operation");
 	}
 
+	@Override
+	public String[] getHeader() {
+		return this.header;
+	}
+	
 	@Override
 	public String getFileName() {
 		return file.getAbsolutePath();

@@ -104,4 +104,10 @@ public class BeanReader implements RecordIterator {
 	    }
 	}
 
+	@Override
+	public String[] getHeader() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

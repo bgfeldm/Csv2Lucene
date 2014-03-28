@@ -10,7 +10,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
 
@@ -34,7 +37,7 @@ public class SimpleCSVReader implements RecordIterator {
     private File file;
     private BufferedReader reader;
     private String[] header;
-    private Map<String, String> nextLine;
+    private String[] nextLine;
     private int currentLineNumber = 0;
 
     /**
@@ -57,7 +60,7 @@ public class SimpleCSVReader implements RecordIterator {
          this.reader = new BufferedReader(new InputStreamReader(fstream));
          this.header = reader.readLine().split(separator);
          currentLineNumber++; // counting header as a line.
-         this.nextLine = nextMap();
+         this.nextLine = readLine();
 	}
 
 	@Override
@@ -84,44 +87,43 @@ public class SimpleCSVReader implements RecordIterator {
     	}
     }
 
+	private String[] readLine(){
+	     String line = null;
+	     try {
+	    	 line = reader.readLine();
+	     } catch (IOException e) {
+	    	 LOG.error("Failed reading next line, at {}:{}", getFileName(), getLineNumber(), e);
+	     }
+	     
+	     if (line==null){ return null; }
+	     
+	     Scanner tokens = new Scanner( line ).useDelimiter(separator);
+	     List<String> retList = new ArrayList<String>();
+	     for(int c=0; tokens.hasNext(); c++){
+	    	 retList.add(tokens.next());
+	     }
+	     
+	     return retList.toArray(new String[retList.size()]);
+	}
+
    @Override
    public boolean hasNext(){
-          return (nextLine != null ? true : false );
+	   return (nextLine != null ? true : false );
    }
-
+ 
    @Override
-   public Map<String, String> next(){
-        Map<String, String> currentLine = nextLine;
-        currentLineNumber++;
-
-        try {
-			this.nextLine=nextMap();
-		} catch (IOException e) {
-        	LOG.error("Failed reading next line, at {}:{}", getFileName(), getLineNumber(), e);
-		}
-
-        return currentLine;
+   public String[] next(){
+		String[] currentLine = this.nextLine;
+		currentLineNumber++;
+		this.nextLine = readLine();
+		return currentLine;
    }
 
-   /**
-    * Get Map of Next CSV Record Line.
-    * 
-    * @return Map
-    * @throws IOException
-    */
-   private Map<String, String> nextMap() throws IOException{
-         String line = reader.readLine();
-         if (line==null){ return null; }
-
-         Scanner tokens = new Scanner(line).useDelimiter(separator);
-         Map<String, String> retMap = new HashMap<String, String>();
-         for(int c=0; tokens.hasNext(); c++){
-        	 retMap.put(header[c], tokens.next());
-         }
-
-       return retMap;
-   }
-
+	@Override
+	public String[] getHeader() {
+		return this.header;
+	}
+   
 	@Override
 	public void remove() {
 		throw new UnsupportedOperationException("CsvIterator does not support remove operation");
@@ -140,10 +142,10 @@ public class SimpleCSVReader implements RecordIterator {
 		Stopwatch stopwatch = Stopwatch.createStarted();
 		
 		SimpleCSVReader reader = new SimpleCSVReader(',');
-		reader.open( new File(filename) );
+		reader.open(new File(filename));
 		
 		for(int c=1; reader.hasNext(); c++){
-			System.out.println(c+" " + reader.next().toString());
+			System.out.println(c+" " + Arrays.toString( reader.next() ));
 		}
 		reader.close();
 		

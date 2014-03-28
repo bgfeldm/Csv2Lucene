@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +31,7 @@ public class OpenCSVReader implements RecordIterator {
 	private static final Logger LOG = LoggerFactory.getLogger(OpenCSVReader.class);
 
 	private File file;
-    private Map<String, String> nextLine;
+    private String[] nextLine;
     private char separator;
     private CSVReader csvReader;
     private int currentLineNumber = 0;
@@ -46,35 +47,16 @@ public class OpenCSVReader implements RecordIterator {
     }
 
 	@Override
-	public Map<String, String> next(){
-		Map<String, String> currentLine = nextLine;
+	public String[] next(){
+		String[] currentLine = this.nextLine;
 		currentLineNumber++;
-
+		String[] ret=null;
 		try {
-			this.nextLine=nextMap();
+			nextLine = csvReader.readNext();
 		} catch (IOException e) {
 			LOG.error("Failed reading next line, at {}:{}", getFileName(), getLineNumber(), e);
 		}
-
 		return currentLine;
-	}
-
-	/**
-	 * Get Map of Next CSV Record Line.
-	 * 
-	 * @return Map
-	 * @throws IOException
-	 */
-	private Map<String, String> nextMap() throws IOException{
-		String[] line = csvReader.readNext();
-		if (line==null){ return null; }
-
-		Map<String, String> retMap = new HashMap<String, String>();
-		for(int c=0; c < header.length; c++){
-			retMap.put(header[c], line[c]);
-		}
-
-		return retMap;
 	}
 
 	@Override
@@ -82,6 +64,11 @@ public class OpenCSVReader implements RecordIterator {
 		throw new UnsupportedOperationException("CsvIterator does not support remove operation");
 	}
 
+	@Override
+	public String[] getHeader() {
+		return this.header;
+	}
+	
 	@Override
 	public String getFileName() {
 		return file.getAbsolutePath();
@@ -98,7 +85,7 @@ public class OpenCSVReader implements RecordIterator {
 		InputStream inputStream = new FileInputStream(file);
 		this.csvReader = new CSVReader(new BufferedReader(new InputStreamReader(inputStream)), separator, '\'');
 		header = csvReader.readNext();
-		this.nextLine = nextMap();
+		this.nextLine = csvReader.readNext();
 	}
 
 	@Override
@@ -124,12 +111,12 @@ public class OpenCSVReader implements RecordIterator {
 		
 		OpenCSVReader reader = new OpenCSVReader(',');
 		reader.open(new File(filename));
-
+		
 		for(int c=1; reader.hasNext(); c++){
-			//System.out.println(c+" " + reader.next().toString());
+			System.out.println(c+" " + Arrays.toString( reader.next() ));
 		}
 		reader.close();
-
+		
 		stopwatch.stop();
 		System.out.println("time: "+stopwatch);
 	}
