@@ -24,15 +24,19 @@ import com.google.common.base.Stopwatch;
 import au.com.bytecode.opencsv.CSVReader;
 
 /**
+ * OpenCSVReader uses the csv parser from OpenCSV project. 
+ * 
  * @author Brian Feldman <bgfeldm@yahoo.com>
  *
+ * @link http://opencsv.sourceforge.net/apidocs/
  */
 public class OpenCSVReader implements RecordIterator {
 	private static final Logger LOG = LoggerFactory.getLogger(OpenCSVReader.class);
 
 	private File file;
     private String[] nextLine;
-    private char separator;
+    private char separator = ',';
+    private char quote = '"';
     private CSVReader csvReader;
     private int currentLineNumber = 0;
     private String[] header;
@@ -43,19 +47,21 @@ public class OpenCSVReader implements RecordIterator {
 
     @Override
     public boolean hasNext(){
-           return (nextLine != null ? true : false );
+           return (this.nextLine != null ? true : false );
     }
 
 	@Override
 	public String[] next(){
 		String[] currentLine = this.nextLine;
 		currentLineNumber++;
+		
 		String[] ret=null;
 		try {
-			nextLine = csvReader.readNext();
+			this.nextLine = csvReader.readNext();
 		} catch (IOException e) {
-			LOG.error("Failed reading next line, at {}:{}", getFileName(), getLineNumber(), e);
+			LOG.error("Failed reading line, at {}:{}", getFileName(), getLineNumber(), e);
 		}
+		
 		return currentLine;
 	}
 
@@ -83,14 +89,21 @@ public class OpenCSVReader implements RecordIterator {
 	public void open(File file) throws IOException {
 		this.file = file;
 		InputStream inputStream = new FileInputStream(file);
-		this.csvReader = new CSVReader(new BufferedReader(new InputStreamReader(inputStream)), separator, '\'');
-		header = csvReader.readNext();
+		this.csvReader = new CSVReader(new BufferedReader(new InputStreamReader(inputStream)), this.separator, this.quote);
+		this.header = csvReader.readNext();
 		this.nextLine = csvReader.readNext();
 	}
 
 	@Override
 	public void open(String textBlob) {
 		this.csvReader = new CSVReader(new StringReader(textBlob));
+		try {
+			this.header = csvReader.readNext();
+			this.nextLine = csvReader.readNext();
+		} catch (IOException e) {
+			LOG.error("Failed reading line, at {}:{}", getFileName(), getLineNumber(), e);
+		}
+		
 	}
 
 	@Override

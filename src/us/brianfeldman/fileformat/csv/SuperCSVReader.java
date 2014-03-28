@@ -23,13 +23,12 @@ import org.supercsv.prefs.CsvPreference;
 import com.google.common.base.Stopwatch;
 
 /**
- * SuperCSVReader users the csv parser from SuperCSV project. 
+ * SuperCSVReader uses the csv parser from SuperCSV project. 
  * 
  * @author Brian G. Feldman (bgfeldm@yahoo.com)
  *
  * @link http://supercsv.sourceforge.net/apidocs/
  * 
- * TODO: Change to use CsvListReader to return List<String>.
  */
 public class SuperCSVReader implements RecordIterator {
 	private static final Logger LOG = LoggerFactory.getLogger(SuperCSVReader.class);
@@ -39,9 +38,16 @@ public class SuperCSVReader implements RecordIterator {
     private ICsvListReader csvReader;
     private String[]      header;
     private CsvPreference csvPreference;
+    private char separator = ',';
+    private char quote = '"';
 
     public SuperCSVReader(final char separator){
-    	csvPreference = new CsvPreference.Builder('"', separator, "\n").build();
+    	this(separator, '"');
+    }
+    
+    public SuperCSVReader(final char separator, final char quote){
+    	this.separator=separator;
+    	csvPreference = new CsvPreference.Builder(quote, separator, "\n").build();
     }
     
     @Override

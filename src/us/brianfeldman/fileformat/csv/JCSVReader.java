@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -28,9 +29,11 @@ import com.googlecode.jcsv.reader.internal.CSVTokenizerImpl;
 import com.googlecode.jcsv.reader.internal.DefaultCSVEntryParser;
 
 /**
- * 
+ * OpenCSVReader uses the csv parser from jCSV project. 
  * 
  * @author Brian Feldman <bgfeldm@yahoo.com>
+ * 
+ * @link https://code.google.com/p/jcsv/
  *
  */
 public class JCSVReader implements RecordIterator {
@@ -38,14 +41,20 @@ public class JCSVReader implements RecordIterator {
 
 	private File file;
     private Map<String, String> nextLine;
-    private char separator;
     private CSVReader<String[]> csvReader;
     private int currentLineNumber = 0;
     private String[] header;
     private Iterator<String[]> csvIterator;
+    private char separator = ',';
+    private char quote = '"';
     
     public JCSVReader(final char separator){
+    	this(separator, '"');
+    }
+
+    public JCSVReader(final char separator, final char quote){
     	this.separator = separator;
+    	this.quote = quote;
     }
 
     @Override
@@ -83,7 +92,7 @@ public class JCSVReader implements RecordIterator {
 		this.file = file;
 		InputStream inputStream = new FileInputStream(file);
 		Reader reader = new BufferedReader(new InputStreamReader(inputStream));
-		CSVStrategy strategy = new CSVStrategy(separator, '"', '#', false, true);
+		CSVStrategy strategy = new CSVStrategy(this.separator, this.quote, '#', false, true);
 		csvReader = new CSVReaderBuilder<String[]>(reader).entryParser(new DefaultCSVEntryParser()).strategy(strategy).build();
 		csvIterator = csvReader.iterator();
 		header = csvIterator.next();
@@ -114,13 +123,12 @@ public class JCSVReader implements RecordIterator {
 		
 		JCSVReader reader = new JCSVReader(',');
 		reader.open(new File(filename));
-
+		
 		for(int c=1; reader.hasNext(); c++){
-			reader.next();
-			//System.out.println(c+" " + reader.next().toString());
+			System.out.println(c+" " + Arrays.toString( reader.next() ));
 		}
 		reader.close();
-
+		
 		stopwatch.stop();
 		System.out.println("time: "+stopwatch);
 	}

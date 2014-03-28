@@ -40,13 +40,6 @@ public class SimpleCSVReader implements RecordIterator {
     private String[] nextLine;
     private int currentLineNumber = 0;
 
-    /**
-     * Constructor
-     * 
-     * @param file
-     * @param separator 
-     * @throws IOException
-     */
     public SimpleCSVReader(final char separator) {
          this.separator = Character.toString(separator);
     }
@@ -114,7 +107,7 @@ public class SimpleCSVReader implements RecordIterator {
    @Override
    public String[] next(){
 		String[] currentLine = this.nextLine;
-		currentLineNumber++;
+		this.currentLineNumber++;
 		this.nextLine = readLine();
 		return currentLine;
    }
