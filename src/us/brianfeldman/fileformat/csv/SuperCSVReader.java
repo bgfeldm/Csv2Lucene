@@ -34,34 +34,34 @@ public class SuperCSVReader implements RecordIterator {
 	private static final Logger LOG = LoggerFactory.getLogger(SuperCSVReader.class);
 
 	private File file;
-    private List<String> currentLine;
-    private ICsvListReader csvReader;
-    private String[]      header;
-    private CsvPreference csvPreference;
-    private char separator = ',';
-    private char quote = '"';
+	private List<String> currentLine;
+	private ICsvListReader csvReader;
+	private String[]      header;
+	private CsvPreference csvPreference;
+	private char separator = ',';
+	private char quote = '"';
 
-    public SuperCSVReader(final char separator){
-    	this(separator, '"');
-    }
-    
-    public SuperCSVReader(final char separator, final char quote){
-    	this.separator=separator;
-    	csvPreference = new CsvPreference.Builder(quote, separator, "\n").build();
-    }
-    
-    @Override
+	public SuperCSVReader(final char separator){
+		this(separator, '"');
+	}
+
+	public SuperCSVReader(final char separator, final char quote){
+		this.separator=separator;
+		csvPreference = new CsvPreference.Builder(quote, separator, "\n").build();
+	}
+
+	@Override
 	public void open(final File file) throws IOException{
-		 this.file=file;
-		 InputStream inputStream = new FileInputStream(file);
-		 // inputStream.skip(8); // Skip over first couple byes of file.
-		 this.csvReader = new CsvListReader(new BufferedReader(new InputStreamReader(inputStream)), csvPreference);
-		 try {
-			 this.header = csvReader.getHeader(false);
-		 } catch (IOException e) {
-			 LOG.error("Failed reading header line, {}", getFileName(), e);
-			 throw(e);
-		 }
+		this.file=file;
+		InputStream inputStream = new FileInputStream(file);
+		// inputStream.skip(8); // Skip over first couple byes of file.
+		this.csvReader = new CsvListReader(new BufferedReader(new InputStreamReader(inputStream)), csvPreference);
+		try {
+			this.header = csvReader.getHeader(false);
+		} catch (IOException e) {
+			LOG.error("Failed reading header line, {}", getFileName(), e);
+			throw(e);
+		}
 	}
 
 	@Override
@@ -71,25 +71,25 @@ public class SuperCSVReader implements RecordIterator {
 		try {
 			this.header = csvReader.getHeader(false);
 		} catch (IOException e) {
-        	LOG.error("Failed reading header line, {}", getFileName(), e);
+			LOG.error("Failed reading header line, {}", getFileName(), e);
 		}
 	}
-	
+
 	@Override
 	public String[] getHeader() {
 		return this.header;
 	}
-	
+
 	@Override
 	public int getLineNumber(){
 		return csvReader.getLineNumber();
 	}
-	
+
 	@Override
 	public String getFileName(){
 		return this.file.getAbsolutePath();
 	}
-	
+
 	@Override
 	public void close() throws IOException {
 		if (csvReader!=null){
@@ -98,22 +98,22 @@ public class SuperCSVReader implements RecordIterator {
 	}
 
 	@Override
-    public boolean hasNext() {
-        try {
-        	if (this.currentLine == null){
-        		this.currentLine = csvReader.read();
-        	}
-        } catch (IOException e) {
-        	LOG.error("Failed reading next line, at {}:{}", getFileName(), getLineNumber(), e);
-        }
-        return currentLine != null;
-    }
+	public boolean hasNext() {
+		try {
+			if (this.currentLine == null){
+				this.currentLine = csvReader.read();
+			}
+		} catch (IOException e) {
+			LOG.error("Failed reading next line, at {}:{}", getFileName(), getLineNumber(), e);
+		}
+		return currentLine != null;
+	}
 
 	@Override
 	public String[] next() {
 		if (this.currentLine == null){
-    		hasNext();
-    	}
+			hasNext();
+		}
 		String[] nextLine = currentLine.toArray(new String[currentLine.size()]);
 		this.currentLine = null;
 		return nextLine;
@@ -123,7 +123,7 @@ public class SuperCSVReader implements RecordIterator {
 	public void remove() {
 		throw new UnsupportedOperationException("CsvIterator does not support remove operation");
 	}
-	
+
 	/**
 	 * Main method used for testing.
 	 * 
@@ -132,17 +132,17 @@ public class SuperCSVReader implements RecordIterator {
 	 */
 	public static void main(final String[] args) throws IOException {
 		String filename = args[0];
-		
+
 		Stopwatch stopwatch = Stopwatch.createStarted();
-		
+
 		SuperCSVReader reader = new SuperCSVReader(',');
 		reader.open(new File(filename));
-		
+
 		for(int c=1; reader.hasNext(); c++){
 			System.out.println(c+" " + Arrays.toString( reader.next() ));
 		}
 		reader.close();
-		
+
 		stopwatch.stop();
 		System.out.println("time: "+stopwatch);
 	}

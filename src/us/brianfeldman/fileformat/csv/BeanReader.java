@@ -88,20 +88,20 @@ public class BeanReader implements RecordIterator {
 	 * @throws IOException 
 	 */
 	public static void main(final String[] args){
-	    String textBlob =
-                "name,number,date\n"+
-                "\"Alpha\",1900,\"13-07-1922\"\n"+
-                "\"Beta\",1901,\"22-01-1943\"\n"+
-                "\"Gamma\",1902,\"30-09-1978\""
-	    ;
-	    
-	    BeanReader reader = new BeanReader(SampleCSVBean.class);
-	    reader.open(textBlob);
-	    	    
-	    while(! reader.hasNext()){
-		    SampleCSVBean bean = (SampleCSVBean) reader.next();
-		    System.out.println( bean.getName() );
-	    }
+		String textBlob =
+				"name,number,date\n"+
+						"\"Alpha\",1900,\"13-07-1922\"\n"+
+						"\"Beta\",1901,\"22-01-1943\"\n"+
+						"\"Gamma\",1902,\"30-09-1978\""
+						;
+
+		BeanReader reader = new BeanReader(SampleCSVBean.class);
+		reader.open(textBlob);
+
+		while(! reader.hasNext()){
+			SampleCSVBean bean = (SampleCSVBean) reader.next();
+			System.out.println( bean.getName() );
+		}
 	}
 
 	@Override

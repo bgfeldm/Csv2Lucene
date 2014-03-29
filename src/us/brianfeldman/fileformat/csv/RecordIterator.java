@@ -14,14 +14,14 @@ import java.util.Iterator;
  *
  */
 public interface RecordIterator extends Iterator<Object> {
-	
+
 	/**
 	 * Get File Name
 	 * 
 	 * @return file name
 	 */
 	public String getFileName();
-	
+
 	/**
 	 * Get current line number.
 	 * 
@@ -35,7 +35,7 @@ public interface RecordIterator extends Iterator<Object> {
 	 * @return line number
 	 */
 	public String[] getHeader();
-	
+
 	/**
 	 * Open reading on a File.
 	 * 

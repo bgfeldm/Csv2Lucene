@@ -12,7 +12,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -21,11 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Stopwatch;
 import com.googlecode.jcsv.CSVStrategy;
-import com.googlecode.jcsv.reader.CSVEntryParser;
 import com.googlecode.jcsv.reader.CSVReader;
-import com.googlecode.jcsv.reader.CSVTokenizer;
 import com.googlecode.jcsv.reader.internal.CSVReaderBuilder;
-import com.googlecode.jcsv.reader.internal.CSVTokenizerImpl;
 import com.googlecode.jcsv.reader.internal.DefaultCSVEntryParser;
 
 /**
@@ -40,30 +36,31 @@ public class JCSVReader implements RecordIterator {
 	private static final Logger LOG = LoggerFactory.getLogger(JCSVReader.class);
 
 	private File file;
-    private Map<String, String> nextLine;
-    private CSVReader<String[]> csvReader;
-    private int currentLineNumber = 0;
-    private String[] header;
-    private Iterator<String[]> csvIterator;
-    private char separator = ',';
-    private char quote = '"';
-    
-    public JCSVReader(final char separator){
-    	this(separator, '"');
-    }
+	private Map<String, String> nextLine;
+	private CSVReader<String[]> csvReader;
+	private int currentLineNumber = 0;
+	private String[] header;
+	private Iterator<String[]> csvIterator;
+	private char separator = ',';
+	private char quote = '"';
 
-    public JCSVReader(final char separator, final char quote){
-    	this.separator = separator;
-    	this.quote = quote;
-    }
+	public JCSVReader(final char separator){
+		this(separator, '"');
+	}
 
-    @Override
-    public boolean hasNext(){
-    	return csvIterator.hasNext();
-    }
+	public JCSVReader(final char separator, final char quote){
+		this.separator = separator;
+		this.quote = quote;
+	}
+
+	@Override
+	public boolean hasNext(){
+		return csvIterator.hasNext();
+	}
 
 	@Override
 	public String[] next(){
+		currentLineNumber++;
 		return csvIterator.next();
 	}
 
@@ -76,7 +73,7 @@ public class JCSVReader implements RecordIterator {
 	public String[] getHeader() {
 		return this.header;
 	}
-	
+
 	@Override
 	public String getFileName() {
 		return file.getAbsolutePath();
@@ -111,24 +108,24 @@ public class JCSVReader implements RecordIterator {
 			csvReader.close();
 		}
 	}
-	
+
 	/**
 	 * @param args
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
 		String filename = args[0];
-		
+
 		Stopwatch stopwatch = Stopwatch.createStarted();
-		
+
 		JCSVReader reader = new JCSVReader(',');
 		reader.open(new File(filename));
-		
+
 		for(int c=1; reader.hasNext(); c++){
 			System.out.println(c+" " + Arrays.toString( reader.next() ));
 		}
 		reader.close();
-		
+
 		stopwatch.stop();
 		System.out.println("time: "+stopwatch);
 	}

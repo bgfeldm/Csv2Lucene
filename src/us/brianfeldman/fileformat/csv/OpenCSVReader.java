@@ -34,34 +34,34 @@ public class OpenCSVReader implements RecordIterator {
 	private static final Logger LOG = LoggerFactory.getLogger(OpenCSVReader.class);
 
 	private File file;
-    private String[] nextLine;
-    private char separator = ',';
-    private char quote = '"';
-    private CSVReader csvReader;
-    private int currentLineNumber = 0;
-    private String[] header;
+	private String[] nextLine;
+	private char separator = ',';
+	private char quote = '"';
+	private CSVReader csvReader;
+	private int currentLineNumber = 0;
+	private String[] header;
 
-    public OpenCSVReader(final char separator){
-    	this.separator = separator;
-    }
+	public OpenCSVReader(final char separator){
+		this.separator = separator;
+	}
 
-    @Override
-    public boolean hasNext(){
-           return (this.nextLine != null ? true : false );
-    }
+	@Override
+	public boolean hasNext(){
+		return (this.nextLine != null ? true : false );
+	}
 
 	@Override
 	public String[] next(){
 		String[] currentLine = this.nextLine;
 		currentLineNumber++;
-		
+
 		String[] ret=null;
 		try {
 			this.nextLine = csvReader.readNext();
 		} catch (IOException e) {
 			LOG.error("Failed reading line, at {}:{}", getFileName(), getLineNumber(), e);
 		}
-		
+
 		return currentLine;
 	}
 
@@ -74,7 +74,7 @@ public class OpenCSVReader implements RecordIterator {
 	public String[] getHeader() {
 		return this.header;
 	}
-	
+
 	@Override
 	public String getFileName() {
 		return file.getAbsolutePath();
@@ -103,7 +103,7 @@ public class OpenCSVReader implements RecordIterator {
 		} catch (IOException e) {
 			LOG.error("Failed reading line, at {}:{}", getFileName(), getLineNumber(), e);
 		}
-		
+
 	}
 
 	@Override
@@ -112,24 +112,24 @@ public class OpenCSVReader implements RecordIterator {
 			csvReader.close();
 		}
 	}
-	
+
 	/**
 	 * @param args
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
 		String filename = args[0];
-		
+
 		Stopwatch stopwatch = Stopwatch.createStarted();
-		
+
 		OpenCSVReader reader = new OpenCSVReader(',');
 		reader.open(new File(filename));
-		
+
 		for(int c=1; reader.hasNext(); c++){
 			System.out.println(c+" " + Arrays.toString( reader.next() ));
 		}
 		reader.close();
-		
+
 		stopwatch.stop();
 		System.out.println("time: "+stopwatch);
 	}

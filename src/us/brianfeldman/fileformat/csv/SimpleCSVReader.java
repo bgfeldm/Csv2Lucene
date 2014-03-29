@@ -31,14 +31,14 @@ import com.google.common.base.Stopwatch;
  *
  */
 public class SimpleCSVReader implements RecordIterator {
-	private static final Logger LOG = LoggerFactory.getLogger(SimpleCSVReader.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SimpleCSVReader.class);
 	
-    final private String separator;
     private File file;
     private BufferedReader reader;
     private String[] header;
     private String[] nextLine;
     private int currentLineNumber = 0;
+    final private String separator;
 
     public SimpleCSVReader(final char separator) {
          this.separator = Character.toString(separator);

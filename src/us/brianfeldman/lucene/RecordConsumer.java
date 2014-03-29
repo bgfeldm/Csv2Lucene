@@ -19,36 +19,39 @@ import com.fasterxml.uuid.impl.RandomBasedGenerator;
 import com.fasterxml.uuid.impl.TimeBasedGenerator;
 
 /**
- * RecordThread
+ * RecordConsumer
  * 
  * Record thread builds the Lucene Document from the record,
  * then adds the document to Lucene writer.
  * 
  * @author Brian G. Feldman <bgfeldm@yahoo.com>
  */
-public class RecordThread implements Runnable {
-	private static final Logger LOG = LoggerFactory.getLogger(RecordThread.class);
+public class RecordConsumer implements Runnable {
+	private static final Logger LOG = LoggerFactory.getLogger(RecordConsumer.class);
 
-	private String[] record;
-	private String[] header;
 	private IndexWriter writer;
-		
-    private static final ThreadLocal<Document> tlocal = new ThreadLocal<Document>();
+	private String[] header;
+	private String[] record;
+	private Map<String, String> metadata;
+
+	private static final ThreadLocal<Document> tlocal = new ThreadLocal<Document>();
 	private Document document;
-		
+
 	//private RandomBasedGenerator uuidGenerator = Generators.randomBasedGenerator();
 
 	/**
 	 * Constructor
 	 * 
+	 * @param writer
 	 * @param header 
 	 * @param record
-	 * @param writer
+	 * @param metdata
 	 */
-	public RecordThread(String[] header, String[] record, IndexWriter writer){
+	public RecordConsumer(IndexWriter writer, String[] header, String[] record, Map<String, String> metadata){
 		this.header=header;
 		this.record=record;
 		this.writer=writer;
+		this.metadata=metadata;
 	}
 
 	/**
@@ -58,25 +61,34 @@ public class RecordThread implements Runnable {
 	 */
 	public Document buildLuceneDocument(){
 		this.document = tlocal.get();
-		
+
 		if (document==null){
 			document = new Document();
 			LOG.debug("Initializing document.");
 			for(int i=0; i < header.length; i++){
 				document.add(new StringField(header[i], record[i].toLowerCase().trim(), Store.YES));
 			}
+			
+			for (Map.Entry<String, String> entry : metadata.entrySet()) {
+				document.add(new StringField(entry.getKey(), entry.getValue(), Store.YES));
+			}
+			
 			tlocal.set(document);
 		} else {
 			for(int i=0; i < header.length; i++){
 				StringField field = (StringField) document.getField( header[i] );
 				field.setStringValue( record[i].toLowerCase().trim() );
 			}
+			for (Map.Entry<String, String> entry : metadata.entrySet()) {
+				StringField field = (StringField) document.getField( entry.getKey() );
+				field.setStringValue( entry.getValue() );				
+			}
 		}
-		
+
 		return document;
 	}
 
-	
+
 	/**
 	 * Add Document to Index.
 	 */
@@ -95,20 +107,20 @@ public class RecordThread implements Runnable {
 			}
 		}
 	}
-	
+
 	@Override
 	public void run() {
-	        //record.put("_uuid", generateUUID());
+		//record.put("_uuid", generateUUID());
 
-			buildLuceneDocument();
-	
-			addToIndex();			
+		buildLuceneDocument();
+
+		addToIndex();			
 	}
 
 	/*
 	private String generateUUID(){
 		return uuidGenerator.generate().toString();
 	}
-	*/
+	 */
 
 }

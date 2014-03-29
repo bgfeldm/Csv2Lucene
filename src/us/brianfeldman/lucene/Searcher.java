@@ -31,6 +31,7 @@ import com.google.common.base.Stopwatch;
  *
  * @author Brian G. Feldman <bgfeldm@yahoo.com>
  * 
+ * @link https://lucene.apache.org/core/4_7_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html
  */
 public class Searcher {
 
@@ -44,11 +45,11 @@ public class Searcher {
 	 * @throws IOException
 	 */
 	public Searcher() throws IOException {
-	    Directory directory = NIOFSDirectory.open(new File(indexPath));
-	    //reader = IndexReader.open(directory);
-	    reader = DirectoryReader.open(directory);
-	    indexDocumentCount = reader.numDocs();
-	    searcher = new IndexSearcher(reader);
+		Directory directory = NIOFSDirectory.open(new File(indexPath));
+		//reader = IndexReader.open(directory);
+		reader = DirectoryReader.open(directory);
+		indexDocumentCount = reader.numDocs();
+		searcher = new IndexSearcher(reader);
 	}
 
 	/**
@@ -62,16 +63,16 @@ public class Searcher {
 	 * @throws org.apache.lucene.queryparser.classic.ParseException 
 	 */
 	public ScoreDoc[] find(String queryStr) {
-	    Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
-	    TopScoreDocCollector collector = TopScoreDocCollector.create(100, false);
-	    
-	    ScoreDoc[] hits = null;
+		Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
+		TopScoreDocCollector collector = TopScoreDocCollector.create(100, false);
+
+		ScoreDoc[] hits = null;
 		try {
 			Query query = new QueryParser(Version.LUCENE_47, null, analyzer).parse(queryStr);
-	    	stopwatch.start();
+			stopwatch.start();
 			searcher.search(query, collector);
-		    hits = collector.topDocs().scoreDocs;
-		    stopwatch.stop();
+			hits = collector.topDocs().scoreDocs;
+			stopwatch.stop();
 		} catch (ParseException | IOException e) {
 			e.printStackTrace();
 		}
@@ -83,28 +84,28 @@ public class Searcher {
 	 * @param hits
 	 */
 	public void displayResults(ScoreDoc[] hits){
-	    stopwatch.elapsed(TimeUnit.MILLISECONDS);
-	    
-	    System.out.println("Total Documents: "+indexDocumentCount +"; Matching Results: "+ hits.length+" ("+stopwatch+")");
-		
-	    for (int i=0; i<hits.length;++i){
-		       int docId = hits[i].doc;
-		       
-		       System.out.println("---- Document "+(i+1));
-		       
-				try {
-					Document doc = searcher.doc(docId);
-				    List<IndexableField> fields = doc.getFields();
-				    for (IndexableField field: fields){
-				          System.out.println(field.name() + ": "+ field.stringValue());
-				    }
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
+		stopwatch.elapsed(TimeUnit.MILLISECONDS);
 
-		    }
+		System.out.println("Total Documents: "+indexDocumentCount +"; Matching Results: "+ hits.length+" ("+stopwatch+")");
+
+		for (int i=0; i<hits.length;++i){
+			int docId = hits[i].doc;
+
+			System.out.println("---- Document "+(i+1));
+
+			try {
+				Document doc = searcher.doc(docId);
+				List<IndexableField> fields = doc.getFields();
+				for (IndexableField field: fields){
+					System.out.println(field.name() + ": "+ field.stringValue());
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		}
 	}
-	
+
 	/**
 	 * Close
 	 * @throws IOException
@@ -115,7 +116,7 @@ public class Searcher {
 			reader.close();
 		}
 	}
-	
+
 	/**
 	 * @param args
 	 * @throws IOException 
@@ -129,6 +130,6 @@ public class Searcher {
 		search.displayResults(hits);
 		search.close();
 	}	
-	
+
 }
 
