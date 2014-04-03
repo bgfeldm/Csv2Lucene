@@ -52,7 +52,7 @@ public class Indexer {
 
 	private final RecordIterator csvReader;
 
-	private final String indexTime = String.valueOf(System.currentTimeMillis() / 1000l);
+	private final String startTime = String.valueOf(System.currentTimeMillis() / 1000l);
 
 	//private BlockingQueue<Runnable> recordQueue;   // Record represents a line from a CSV file.
 	private TransferQueue<Runnable> recordQueue;
@@ -69,7 +69,6 @@ public class Indexer {
 		}
 		PropertyConfigurator.configure(props);
 	}
-
 
 	public Indexer(RecordIterator csvReader){
 		this.csvReader = csvReader;
@@ -129,6 +128,7 @@ public class Indexer {
 		}
 	}
 
+	public String getStartTime() { return startTime; }
 
 	/**
 	 * Index Directory of CSV files.
@@ -161,9 +161,8 @@ public class Indexer {
 			while(csvReader.hasNext() ){
 					String[] record = (String[]) csvReader.next();
 
-
-					metadata.put("_doc_id", csvReader.getFileName() + ":" + csvReader.getLineNumber());
-					metadata.put("_index_time", indexTime);
+					metadata.put("_doc_id", csvReader.getFileName()+":"+String.valueOf(csvReader.getLineNumber()));
+					metadata.put("_index_time", startTime);
 
 					if (recordQueue.size() < maxThreads*3){
 						recordQueue.add(new RecordConsumer(writer, header, record, metadata));
@@ -213,11 +212,13 @@ public class Indexer {
 
 		/*
 		 * Five build-in csv parsers, listed from fastest to slowest.
+		 * @TODO find limitations for each csv parser implementation.
 		 */
-		JCSVReader csvReader = new JCSVReader(',');
-		//OpenCSVReader csvReader = new OpenCSVReader(',');
-		//SuperCSVReader csvReader = new SuperCSVReader(',');
-		//SimpleReader csvReader = new SimpleReader(',');
+		JCSVReader csvReader = new JCSVReader(',', '"');
+		//JavaCSVReader csvReader = new JavaCSVReader(',', '"');
+		//OpenCSVReader csvReader = new OpenCSVReader(',', '"');
+		//SuperCSVReader csvReader = new SuperCSVReader(',', '"');
+		//SimpleReader csvReader = new SimpleReader(',', '"');
 
 		Indexer indexer = new Indexer(csvReader);
 

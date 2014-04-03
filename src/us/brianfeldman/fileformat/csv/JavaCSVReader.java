@@ -6,11 +6,11 @@ package us.brianfeldman.fileformat.csv;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
@@ -18,53 +18,58 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.csvreader.CsvReader;
 import com.google.common.base.Stopwatch;
-import com.googlecode.jcsv.CSVStrategy;
 import com.googlecode.jcsv.reader.CSVReader;
-import com.googlecode.jcsv.reader.internal.CSVReaderBuilder;
-import com.googlecode.jcsv.reader.internal.DefaultCSVEntryParser;
 
 /**
- * OpenCSVReader uses the csv parser from jCSV project. 
- * 
  * @author Brian Feldman <bgfeldm@yahoo.com>
- * 
- * @link https://code.google.com/p/jcsv/
  *
  */
-public class JCSVReader implements RecordIterator {
-	private static final Logger LOG = LoggerFactory.getLogger(JCSVReader.class);
+public class JavaCSVReader implements RecordIterator {
+	private static final Logger LOG = LoggerFactory.getLogger(JavaCSVReader.class);
 
 	private File file;
 	private Map<String, String> nextLine;
-	private CSVReader<String[]> csvReader;
+	private CsvReader csvReader;
 	private int currentLineNumber = 0;
 	private String[] header;
-	private Iterator<String[]> csvIterator;
 	private char separator = ',';
 	private char quote = '"';
 	private char comment = '#';
 	private boolean ignoreEmptyLines = true;
+	private char recordDelimiter = '\n';
 
-
-	public JCSVReader(final char separator){
+	public JavaCSVReader(final char separator){
 		this(separator, '"');
 	}
 
-	public JCSVReader(final char separator, final char quote){
+	public JavaCSVReader(final char separator, final char quote){
 		this.separator = separator;
 		this.quote = quote;
 	}
 
 	@Override
-	public boolean hasNext(){
-		return csvIterator.hasNext();
+	public boolean hasNext() {
+		boolean bool = false;
+		try {
+			 bool = csvReader.readRecord();
+		} catch (IOException e) {
+			LOG.error("Failed to find next record.", e);
+		}
+		return bool;
 	}
 
 	@Override
-	public String[] next(){
+	public  String[] next() {
 		currentLineNumber++;
-		return csvIterator.next();
+		String[] row = null;
+		try {
+			 row = csvReader.getValues();
+		} catch (IOException e) {
+			LOG.error("Failed reading line, at {}:{}", getFileName(), getLineNumber(), e);
+		}
+		return row;
 	}
 
 	@Override
@@ -73,18 +78,18 @@ public class JCSVReader implements RecordIterator {
 	}
 
 	@Override
-	public String[] getHeader() {
-		return this.header;
-	}
-
-	@Override
 	public String getFileName() {
-		return file.getAbsolutePath();
+		return this.file.getAbsolutePath();
 	}
 
 	@Override
 	public int getLineNumber() {
-		return currentLineNumber;
+		return this.currentLineNumber;
+	}
+
+	@Override
+	public String[] getHeader() {
+		return this.header;
 	}
 
 	@Override
@@ -92,24 +97,27 @@ public class JCSVReader implements RecordIterator {
 		this.file = file;
 		InputStream inputStream = new FileInputStream(file);
 		Reader reader = new BufferedReader(new InputStreamReader(inputStream));
-		CSVStrategy strategy = new CSVStrategy(this.separator, this.quote, this.comment, false, this.ignoreEmptyLines);
-		csvReader = new CSVReaderBuilder<String[]>(reader).entryParser(new DefaultCSVEntryParser()).strategy(strategy).build();
-		csvIterator = csvReader.iterator();
-		header = csvIterator.next();
+		csvReader = new CsvReader(reader, this.separator);
+		csvReader.setTrimWhitespace(true);
+		csvReader.setTextQualifier(this.quote);
+		csvReader.setSkipEmptyRecords(this.ignoreEmptyLines);
+		csvReader.setComment(this.comment);
+		csvReader.setRecordDelimiter(this.recordDelimiter);
+		this.header = csvReader.getHeaders();
 	}
 
 	@Override
 	public void open(String textBlob) {
-		this.csvReader = CSVReaderBuilder.newDefaultReader(new StringReader(textBlob));
-		csvIterator = csvReader.iterator();
-		header = csvIterator.next();
+		try {
+			csvReader = new CsvReader(textBlob);
+		} catch (FileNotFoundException e) {
+			LOG.error("Failed to read record.", e);
+		}
 	}
 
 	@Override
 	public void close() throws IOException {
-		if (csvReader != null){
-			csvReader.close();
-		}
+		csvReader.close();
 	}
 
 	/**
@@ -121,7 +129,7 @@ public class JCSVReader implements RecordIterator {
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
-		JCSVReader reader = new JCSVReader(',');
+		JavaCSVReader reader = new JavaCSVReader(',');
 		reader.open(new File(filename));
 
 		for(int c=1; reader.hasNext(); c++){
@@ -131,6 +139,6 @@ public class JCSVReader implements RecordIterator {
 
 		stopwatch.stop();
 		System.out.println("time: "+stopwatch);
-	}
-
+	}	
+	
 }

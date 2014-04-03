@@ -40,14 +40,16 @@ public class SuperCSVReader implements RecordIterator {
 	private CsvPreference csvPreference;
 	private char separator = ',';
 	private char quote = '"';
+	private String recordDelimiter = "\n";
 
 	public SuperCSVReader(final char separator){
 		this(separator, '"');
 	}
 
 	public SuperCSVReader(final char separator, final char quote){
-		this.separator=separator;
-		csvPreference = new CsvPreference.Builder(quote, separator, "\n").build();
+		this.separator = separator;
+		this.quote = quote;
+		csvPreference = new CsvPreference.Builder(this.quote, this.separator, this.recordDelimiter).build();
 	}
 
 	@Override
