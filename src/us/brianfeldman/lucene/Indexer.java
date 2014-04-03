@@ -31,6 +31,7 @@ import org.apache.lucene.util.Version;
 import com.google.common.base.Stopwatch;
 
 import us.brianfeldman.fileformat.csv.JCSVReader;
+import us.brianfeldman.fileformat.csv.JavaCSVReader;
 import us.brianfeldman.fileformat.csv.OpenCSVReader;
 import us.brianfeldman.fileformat.csv.SuperCSVReader;
 import us.brianfeldman.fileformat.csv.RecordIterator;
@@ -157,13 +158,13 @@ public class Indexer {
 
 			String[] header = csvReader.getHeader();
 			Map<String, String> metadata = new LinkedHashMap<String, String>();
+			metadata.put("_index_time", startTime);
 
 			while(csvReader.hasNext() ){
 					String[] record = (String[]) csvReader.next();
 
 					metadata.put("_doc_id", csvReader.getFileName()+":"+String.valueOf(csvReader.getLineNumber()));
-					metadata.put("_index_time", startTime);
-
+					
 					if (recordQueue.size() < maxThreads*3){
 						recordQueue.add(new RecordConsumer(writer, header, record, metadata));
 					} else {
@@ -215,10 +216,10 @@ public class Indexer {
 		 * @TODO find limitations for each csv parser implementation.
 		 */
 		JCSVReader csvReader = new JCSVReader(',', '"');
-		//JavaCSVReader csvReader = new JavaCSVReader(',', '"');
+		//SuperCSVReader csvReader = new SuperCSVReader(',', '"'); // fastest on larger files; slow on small files.
 		//OpenCSVReader csvReader = new OpenCSVReader(',', '"');
-		//SuperCSVReader csvReader = new SuperCSVReader(',', '"');
-		//SimpleReader csvReader = new SimpleReader(',', '"');
+		//JavaCSVReader csvReader = new JavaCSVReader(',', '"');
+		//SimpleReader csvReader = new SimpleReader(',');  // non-complex csv, slowest but simplest to customize the single class.
 
 		Indexer indexer = new Indexer(csvReader);
 
