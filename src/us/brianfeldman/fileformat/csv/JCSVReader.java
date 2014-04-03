@@ -124,7 +124,8 @@ public class JCSVReader implements RecordIterator {
 		JCSVReader reader = new JCSVReader(',');
 		reader.open(new File(filename));
 
-		for(int c=1; reader.hasNext(); c++){
+		for(int c=1; c < 10; c++){
+		//for(int c=1; reader.hasNext(); c++){
 			System.out.println(c+" " + Arrays.toString( reader.next() ));
 		}
 		reader.close();

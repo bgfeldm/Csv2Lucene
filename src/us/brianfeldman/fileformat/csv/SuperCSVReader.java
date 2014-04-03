@@ -16,11 +16,14 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.supercsv.comment.CommentMatcher;
+import org.supercsv.comment.CommentStartsWith;
 import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 
 import com.google.common.base.Stopwatch;
+import com.googlecode.jcsv.annotations.processors.StringProcessor;
 
 /**
  * SuperCSVReader uses the csv parser from SuperCSV project. 
@@ -34,12 +37,13 @@ public class SuperCSVReader implements RecordIterator {
 	private static final Logger LOG = LoggerFactory.getLogger(SuperCSVReader.class);
 
 	private File file;
-	private List<String> currentLine;
+	private String[] currentLine;
 	private ICsvListReader csvReader;
 	private String[]      header;
 	private CsvPreference csvPreference;
 	private char separator = ',';
 	private char quote = '"';
+	private String comment = "#";
 	private String recordDelimiter = "\n";
 
 	public SuperCSVReader(final char separator){
@@ -49,7 +53,8 @@ public class SuperCSVReader implements RecordIterator {
 	public SuperCSVReader(final char separator, final char quote){
 		this.separator = separator;
 		this.quote = quote;
-		csvPreference = new CsvPreference.Builder(this.quote, this.separator, this.recordDelimiter).build();
+		// surroundingSpacesNeedQuotes when true will trim spaces unless within quotes.
+		csvPreference = new CsvPreference.Builder(this.quote, this.separator, this.recordDelimiter).skipComments(new CommentStartsWith(this.comment)).surroundingSpacesNeedQuotes(true).build();
 	}
 
 	@Override
@@ -60,8 +65,10 @@ public class SuperCSVReader implements RecordIterator {
 		this.csvReader = new CsvListReader(new BufferedReader(new InputStreamReader(inputStream)), csvPreference);
 		try {
 			this.header = csvReader.getHeader(false);
+			List<String> nextLine = csvReader.read();
+			this.currentLine = convertNullsToString(nextLine.toArray(new String[nextLine.size()]));
 		} catch (IOException e) {
-			LOG.error("Failed reading header line, {}", getFileName(), e);
+			LOG.error("Failed reading line, at {}:{}", getFileName(), getLineNumber(), e);
 			throw(e);
 		}
 	}
@@ -72,8 +79,10 @@ public class SuperCSVReader implements RecordIterator {
 		this.csvReader = new CsvListReader(reader, csvPreference);
 		try {
 			this.header = csvReader.getHeader(false);
+			List<String> nextLine = csvReader.read();
+			this.currentLine = convertNullsToString(nextLine.toArray(new String[nextLine.size()]));
 		} catch (IOException e) {
-			LOG.error("Failed reading header line, {}", getFileName(), e);
+			LOG.error("Failed reading line, at {}:{}", getFileName(), getLineNumber(), e);
 		}
 	}
 
@@ -99,26 +108,36 @@ public class SuperCSVReader implements RecordIterator {
 		}
 	}
 
+	private String[] convertNullsToString(String[] in){
+		for(int i=0; i < in.length; i++){
+			if (in[i] == null){
+				in[i]="";
+			}
+		}
+		return in;
+	}
+	
 	@Override
 	public boolean hasNext() {
-		try {
-			if (this.currentLine == null){
-				this.currentLine = csvReader.read();
-			}
-		} catch (IOException e) {
-			LOG.error("Failed reading next line, at {}:{}", getFileName(), getLineNumber(), e);
-		}
-		return currentLine != null;
+		return (this.currentLine != null ? true : false );
 	}
 
 	@Override
 	public String[] next() {
-		if (this.currentLine == null){
-			hasNext();
+		String[] currentRow = this.currentLine;
+
+		try {
+			List<String> nextLine = csvReader.read();
+			if (nextLine != null){
+				this.currentLine = convertNullsToString(nextLine.toArray(new String[nextLine.size()]));
+			} else {
+				this.currentLine = null;
+			}
+		} catch (IOException e) {
+			LOG.error("Failed reading line, at {}:{}", getFileName(), getLineNumber(), e);
 		}
-		String[] nextLine = currentLine.toArray(new String[currentLine.size()]);
-		this.currentLine = null;
-		return nextLine;
+
+		return currentRow;
 	}
 
 	@Override
@@ -137,10 +156,11 @@ public class SuperCSVReader implements RecordIterator {
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
 
-		SuperCSVReader reader = new SuperCSVReader(',');
+		SuperCSVReader reader = new SuperCSVReader(',', '"');
 		reader.open(new File(filename));
 
-		for(int c=1; reader.hasNext(); c++){
+		for(int c=1; c < 10; c++){
+		//for(int c=1; reader.hasNext(); c++){
 			System.out.println(c+" " + Arrays.toString( reader.next() ));
 		}
 		reader.close();

@@ -11,8 +11,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -30,10 +32,10 @@ public class JavaCSVReader implements RecordIterator {
 	private static final Logger LOG = LoggerFactory.getLogger(JavaCSVReader.class);
 
 	private File file;
-	private Map<String, String> nextLine;
 	private CsvReader csvReader;
 	private int currentLineNumber = 0;
 	private String[] header;
+	private String[] currentLine;
 	private char separator = ',';
 	private char quote = '"';
 	private char comment = '#';
@@ -51,25 +53,25 @@ public class JavaCSVReader implements RecordIterator {
 
 	@Override
 	public boolean hasNext() {
-		boolean bool = false;
-		try {
-			 bool = csvReader.readRecord();
-		} catch (IOException e) {
-			LOG.error("Failed to find next record.", e);
-		}
-		return bool;
+		return (this.currentLine != null ? true : false );
 	}
 
 	@Override
 	public  String[] next() {
+		String[] currentRow = this.currentLine;
 		currentLineNumber++;
-		String[] row = null;
+
 		try {
-			 row = csvReader.getValues();
+			 if ( csvReader.readRecord() ){
+				 this.currentLine = csvReader.getValues();
+			 } else {
+				 this.currentLine = null;
+			 }
 		} catch (IOException e) {
 			LOG.error("Failed reading line, at {}:{}", getFileName(), getLineNumber(), e);
 		}
-		return row;
+
+		return currentRow;
 	}
 
 	@Override
@@ -93,17 +95,26 @@ public class JavaCSVReader implements RecordIterator {
 	}
 
 	@Override
-	public void open(File file) throws IOException {
+	public void open(final File file) throws IOException {
 		this.file = file;
 		InputStream inputStream = new FileInputStream(file);
 		Reader reader = new BufferedReader(new InputStreamReader(inputStream));
 		csvReader = new CsvReader(reader, this.separator);
+		//csvReader.setSafetySwitch(false);
 		csvReader.setTrimWhitespace(true);
 		csvReader.setTextQualifier(this.quote);
+		csvReader.setUseTextQualifier(true);
 		csvReader.setSkipEmptyRecords(this.ignoreEmptyLines);
 		csvReader.setComment(this.comment);
-		csvReader.setRecordDelimiter(this.recordDelimiter);
-		this.header = csvReader.getHeaders();
+		//csvReader.setRecordDelimiter(this.recordDelimiter); // @BUG when set the newline character is not always stripped off last value.
+		
+		currentLineNumber++;
+		if (csvReader.readRecord()){
+			this.header = csvReader.getValues();
+		}
+		if (csvReader.readRecord()){
+			this.currentLine = csvReader.getValues();
+		}
 	}
 
 	@Override
@@ -124,7 +135,7 @@ public class JavaCSVReader implements RecordIterator {
 	 * @param args
 	 * @throws IOException 
 	 */
-	public static void main(String[] args) throws IOException {
+	public static void main(final String[] args) throws IOException {
 		String filename = args[0];
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
@@ -132,7 +143,8 @@ public class JavaCSVReader implements RecordIterator {
 		JavaCSVReader reader = new JavaCSVReader(',');
 		reader.open(new File(filename));
 
-		for(int c=1; reader.hasNext(); c++){
+		for(int c=1; c < 10; c++){
+		//for(int c=1; reader.hasNext(); c++){
 			System.out.println(c+" " + Arrays.toString( reader.next() ));
 		}
 		reader.close();

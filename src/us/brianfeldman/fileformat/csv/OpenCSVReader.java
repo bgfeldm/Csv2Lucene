@@ -42,9 +42,14 @@ public class OpenCSVReader implements RecordIterator {
 	private String[] header;
 
 	public OpenCSVReader(final char separator){
-		this.separator = separator;
+		this(separator, '"');
 	}
 
+	public OpenCSVReader(final char separator, final char quote){
+		this.separator = separator;
+		this.quote = quote;
+	}
+	
 	@Override
 	public boolean hasNext(){
 		return (this.nextLine != null ? true : false );
@@ -55,7 +60,7 @@ public class OpenCSVReader implements RecordIterator {
 		String[] currentLine = this.nextLine;
 		currentLineNumber++;
 
-		String[] ret=null;
+		this.nextLine = null;
 		try {
 			this.nextLine = csvReader.readNext();
 		} catch (IOException e) {
@@ -125,7 +130,8 @@ public class OpenCSVReader implements RecordIterator {
 		OpenCSVReader reader = new OpenCSVReader(',');
 		reader.open(new File(filename));
 
-		for(int c=1; reader.hasNext(); c++){
+		for(int c=1; c < 10; c++){
+		//for(int c=1; reader.hasNext(); c++){
 			System.out.println(c+" " + Arrays.toString( reader.next() ));
 		}
 		reader.close();
