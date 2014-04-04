@@ -54,6 +54,14 @@ public class SuperCSVReader implements RecordIterator {
 		this.separator = separator;
 		this.quote = quote;
 		// surroundingSpacesNeedQuotes when true will trim spaces unless within quotes.
+		csvPreference = new CsvPreference.Builder(this.quote, this.separator, this.recordDelimiter).surroundingSpacesNeedQuotes(true).build();
+	}
+	
+	public SuperCSVReader(final char separator, final char quote, final char comment){
+		this.separator = separator;
+		this.quote = quote;
+		this.comment = String.valueOf(comment);
+		// surroundingSpacesNeedQuotes when true will trim spaces unless within quotes.
 		csvPreference = new CsvPreference.Builder(this.quote, this.separator, this.recordDelimiter).skipComments(new CommentStartsWith(this.comment)).surroundingSpacesNeedQuotes(true).build();
 	}
 

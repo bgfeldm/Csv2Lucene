@@ -215,10 +215,10 @@ public class Indexer {
 		 * Five build-in csv parsers, listed from fastest to slowest.
 		 * @TODO find limitations for each csv parser implementation.
 		 */
-		JCSVReader csvReader = new JCSVReader(',', '"');
-		//SuperCSVReader csvReader = new SuperCSVReader(',', '"'); // fastest on larger files; slow on small files.
+		JCSVReader csvReader = new JCSVReader(',', '"', '#');
+		//SuperCSVReader csvReader = new SuperCSVReader(',', '"', '#'); // fastest on larger files; slow on small files.
+		//JavaCSVReader csvReader = new JavaCSVReader(',', '"', '#');
 		//OpenCSVReader csvReader = new OpenCSVReader(',', '"');
-		//JavaCSVReader csvReader = new JavaCSVReader(',', '"');
 		//SimpleReader csvReader = new SimpleReader(',');  // non-complex csv, slowest but simplest to customize the single class.
 
 		Indexer indexer = new Indexer(csvReader);

@@ -45,6 +45,7 @@ public class JCSVReader implements RecordIterator {
 	private char quote = '"';
 	private char comment = '#';
 	private boolean ignoreEmptyLines = true;
+	private CSVStrategy strategy;
 
 
 	public JCSVReader(final char separator){
@@ -54,8 +55,18 @@ public class JCSVReader implements RecordIterator {
 	public JCSVReader(final char separator, final char quote){
 		this.separator = separator;
 		this.quote = quote;
+
+		this.strategy = new CSVStrategy(this.separator, this.quote, this.comment, false, this.ignoreEmptyLines);
 	}
 
+	public JCSVReader(final char separator, final char quote, final char comment){
+		this.separator = separator;
+		this.quote = quote;
+		this.comment = comment;
+		
+		this.strategy = new CSVStrategy(this.separator, this.quote, this.comment, false, this.ignoreEmptyLines);
+	}
+	
 	@Override
 	public boolean hasNext(){
 		return csvIterator.hasNext();
@@ -92,7 +103,7 @@ public class JCSVReader implements RecordIterator {
 		this.file = file;
 		InputStream inputStream = new FileInputStream(file);
 		Reader reader = new BufferedReader(new InputStreamReader(inputStream));
-		CSVStrategy strategy = new CSVStrategy(this.separator, this.quote, this.comment, false, this.ignoreEmptyLines);
+		
 		csvReader = new CSVReaderBuilder<String[]>(reader).entryParser(new DefaultCSVEntryParser()).strategy(strategy).build();
 		csvIterator = csvReader.iterator();
 		header = csvIterator.next();

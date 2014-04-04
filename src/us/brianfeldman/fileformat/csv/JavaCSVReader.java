@@ -51,6 +51,12 @@ public class JavaCSVReader implements RecordIterator {
 		this.quote = quote;
 	}
 
+	public JavaCSVReader(final char separator, final char quote, final char comment){
+		this.separator = separator;
+		this.quote = quote;
+		this.comment = comment;
+	}
+	
 	@Override
 	public boolean hasNext() {
 		return (this.currentLine != null ? true : false );
