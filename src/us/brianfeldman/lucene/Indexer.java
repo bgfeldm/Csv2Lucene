@@ -157,14 +157,15 @@ public class Indexer {
 			csvReader.open(file);
 
 			String[] header = csvReader.getHeader();
-			Map<String, String> metadata = new LinkedHashMap<String, String>();
-			metadata.put("_index_time", startTime);
+
 
 			while(csvReader.hasNext() ){
 					String[] record = (String[]) csvReader.next();
 
+					Map<String, String> metadata = new LinkedHashMap<String, String>();
+					metadata.put("_index_time", startTime);
 					metadata.put("_doc_id", csvReader.getFileName()+":"+String.valueOf(csvReader.getLineNumber()));
-					
+
 					if (recordQueue.size() < maxThreads*3){
 						recordQueue.add(new RecordConsumer(writer, header, record, metadata));
 					} else {
