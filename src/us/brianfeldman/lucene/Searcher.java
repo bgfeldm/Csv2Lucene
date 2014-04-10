@@ -5,17 +5,22 @@ package us.brianfeldman.lucene;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.AtomicReader;
+import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.FieldInfo;
+import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -41,7 +46,13 @@ public class Searcher {
 	private Stopwatch stopwatch = Stopwatch.createUnstarted();
 	private int indexDocumentCount;
 
+	private static String DEFAULT_SEARCH_FIELD = "_ALL";
+	private static char[] COMPLETE_ESCAPE_CHARS = {'+','-','&','|','(',')','{','}','[',']','^','"','~','*','?',':','\\'};
+	private static char[] SAFE_ESCAPE_CHARS = {'+','-','&','|','~','*','?'};
+	
 	/**
+	 * Constructor
+	 * 
 	 * @throws IOException
 	 */
 	public Searcher() throws IOException {
@@ -51,60 +62,69 @@ public class Searcher {
 		indexDocumentCount = reader.numDocs();
 		searcher = new IndexSearcher(reader);
 	}
+	
+	public IndexSearcher getIndexSearcher(){
+		return this.searcher;
+	}
 
+	public Set<String> getSearchableFields() throws IOException{
+		Set<String> fields = new LinkedHashSet<String>();
+		IndexReader reader = searcher.getIndexReader(); 
+
+		for (AtomicReaderContext rc : reader.leaves()) { 
+		AtomicReader ar = rc.reader(); 
+		FieldInfos fis = ar.getFieldInfos(); 
+		for (FieldInfo fi : fis)
+			if (fi.isIndexed()){
+				fields.add(fi.name);
+			}
+		}
+
+		reader.close();
+		
+		return fields;
+	}
+	
+	
 	/**
 	 * Find / Search Lucene
 	 * 
 	 * @param queryStr
-	 * @return 
+	 * @param recordsPerPage 
+	 * @param page 
+	 * @return SearchResults
 	 * @throws ParseException
 	 * @throws IOException
 	 * @throws ParseException
 	 * @throws org.apache.lucene.queryparser.classic.ParseException 
 	 */
-	public ScoreDoc[] find(String queryStr) {
+	public SearchResults find(String queryStr, int page, int pageSize) throws ParseException, IOException {
 		Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
-		TopScoreDocCollector collector = TopScoreDocCollector.create(100, false);
 
-		ScoreDoc[] hits = null;
-		try {
-			Query query = new QueryParser(Version.LUCENE_47, null, analyzer).parse(queryStr);
-			stopwatch.start();
-			searcher.search(query, collector);
-			hits = collector.topDocs().scoreDocs;
-			stopwatch.stop();
-		} catch (ParseException | IOException e) {
-			e.printStackTrace();
+		int offset = page * pageSize;
+		TopScoreDocCollector collector = TopScoreDocCollector.create(offset+pageSize, true);
+		
+		QueryParser qparser = new QueryParser(Version.LUCENE_47, DEFAULT_SEARCH_FIELD, analyzer);
+		qparser.setAllowLeadingWildcard(true);
+		qparser.setDefaultOperator(Operator.OR);
+
+		Query query = qparser.parse(queryStr);
+		searcher.search(query, collector);
+		ScoreDoc[] hits = collector.topDocs().scoreDocs;
+		int totalHits = collector.getTotalHits();
+
+		SearchResults results = new SearchResults(queryStr, totalHits, page);
+		int count = Math.min(hits.length - offset, pageSize);
+		for (int i = 0; i < count; ++i) {
+			int docId = hits[offset+i].doc;
+			Document doc = searcher.doc(docId);
+			results.addDocument(doc);
 		}
-		return hits;
+
+		return results;
 	}
+	
 
-	/**
-	 * Display Search Results.
-	 * @param hits
-	 */
-	public void displayResults(ScoreDoc[] hits){
-		stopwatch.elapsed(TimeUnit.MILLISECONDS);
-
-		System.out.println("Total Documents: "+indexDocumentCount +"; Matching Results: "+ hits.length+" ("+stopwatch+")");
-
-		for (int i=0; i<hits.length;++i){
-			int docId = hits[i].doc;
-
-			System.out.println("---- Document "+(i+1));
-
-			try {
-				Document doc = searcher.doc(docId);
-				List<IndexableField> fields = doc.getFields();
-				for (IndexableField field: fields){
-					System.out.println(field.name() + ": "+ field.stringValue());
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
-		}
-	}
 
 	/**
 	 * Close
@@ -118,6 +138,20 @@ public class Searcher {
 	}
 
 	/**
+	 * Escape Query string characters
+	 *   + - && || ! ( ) { } [ ] ^ " ~ * ? : \
+	 * 
+	 * @param query
+	 * @return
+	 */
+	public static String escapeQuery(String query){
+		for(int i=0; i < SAFE_ESCAPE_CHARS.length; i++){
+			query = query.replace(""+SAFE_ESCAPE_CHARS[i], ""+'\\'+SAFE_ESCAPE_CHARS[i]);
+		}
+		return query;
+	}
+
+	/**
 	 * @param args
 	 * @throws IOException 
 	 * @throws org.apache.lucene.queryparser.classic.ParseException 
@@ -126,10 +160,15 @@ public class Searcher {
 	public static void main(String[] args) throws IOException, ParseException, org.apache.lucene.queryparser.classic.ParseException {
 		String queryStr=args[0];
 		Searcher search = new Searcher();
-		ScoreDoc[] hits = search.find(queryStr);
-		search.displayResults(hits);
+		SearchResults results = search.find(queryStr, 25, 0);
+		results.stdout();
+
+		// Searchable Fields.
+		Set<String> fields = search.getSearchableFields();
+		System.out.println(fields);
+
 		search.close();
-	}	
+	}
 
 }
 

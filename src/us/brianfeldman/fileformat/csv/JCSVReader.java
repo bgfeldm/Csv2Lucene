@@ -6,6 +6,7 @@ package us.brianfeldman.fileformat.csv;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -25,7 +26,7 @@ import com.googlecode.jcsv.reader.internal.CSVReaderBuilder;
 import com.googlecode.jcsv.reader.internal.DefaultCSVEntryParser;
 
 /**
- * OpenCSVReader uses the csv parser from jCSV project. 
+ * JCSVReader uses the csv parser from jCSV project. 
  * 
  * @author Brian Feldman <bgfeldm@yahoo.com>
  * 
@@ -48,10 +49,17 @@ public class JCSVReader implements RecordIterator {
 	private CSVStrategy strategy;
 
 
+	/**
+	 * @param separator		field separator character.  usually ',' in North America, ';' in Europe and sometimes '\t' for tab.
+	 */
 	public JCSVReader(final char separator){
 		this(separator, '"');
 	}
 
+	/**
+	 * @param separator		field separator character.  usually ',' in North America, ';' in Europe and sometimes '\t' for tab.
+	 * @param quote			character use to enclose fields containing a separator. usually '"'
+	 */
 	public JCSVReader(final char separator, final char quote){
 		this.separator = separator;
 		this.quote = quote;
@@ -59,6 +67,11 @@ public class JCSVReader implements RecordIterator {
 		this.strategy = new CSVStrategy(this.separator, this.quote, this.comment, false, this.ignoreEmptyLines);
 	}
 
+	/**
+	 * @param separator		field separator character.  usually ',' in North America, ';' in Europe and sometimes '\t' for tab.
+	 * @param quote			character use to enclose fields containing a separator. usually '"'
+	 * @param comment		leading character used on comment lines. Comment lines are ignored.
+	 */
 	public JCSVReader(final char separator, final char quote, final char comment){
 		this.separator = separator;
 		this.quote = quote;
@@ -99,10 +112,10 @@ public class JCSVReader implements RecordIterator {
 	}
 
 	@Override
-	public void open(File file) throws IOException {
+	public void open(File file) throws FileNotFoundException  {
 		this.file = file;
 		InputStream inputStream = new FileInputStream(file);
-		Reader reader = new BufferedReader(new InputStreamReader(inputStream));
+		Reader reader = new BufferedReader(new InputStreamReader(inputStream), 32768);
 		
 		csvReader = new CSVReaderBuilder<String[]>(reader).entryParser(new DefaultCSVEntryParser()).strategy(strategy).build();
 		csvIterator = csvReader.iterator();

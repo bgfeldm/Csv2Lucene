@@ -6,15 +6,11 @@ package us.brianfeldman.fileformat.csv;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.io.StringReader;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +21,8 @@ import au.com.bytecode.opencsv.CSVReader;
 
 /**
  * OpenCSVReader uses the csv parser from OpenCSV project. 
+ * 
+ * Note: OpenCSV automaticly takes care of comment lines starting with "#", but does not expose setting the character for comments.
  * 
  * @author Brian Feldman <bgfeldm@yahoo.com>
  *
@@ -41,10 +39,17 @@ public class OpenCSVReader implements RecordIterator {
 	private int currentLineNumber = 0;
 	private String[] header;
 
+	/**
+	 * @param separator		field separator character.  usually ',' in North America, ';' in Europe and sometimes '\t' for tab.
+	 */
 	public OpenCSVReader(final char separator){
 		this(separator, '"');
 	}
 
+	/**
+	 * @param separator		field separator character.  usually ',' in North America, ';' in Europe and sometimes '\t' for tab.
+	 * @param quote			character use to enclose fields containing a separator. usually '"'
+	 */
 	public OpenCSVReader(final char separator, final char quote){
 		this.separator = separator;
 		this.quote = quote;
@@ -94,7 +99,7 @@ public class OpenCSVReader implements RecordIterator {
 	public void open(File file) throws IOException {
 		this.file = file;
 		InputStream inputStream = new FileInputStream(file);
-		this.csvReader = new CSVReader(new BufferedReader(new InputStreamReader(inputStream)), this.separator, this.quote);
+		this.csvReader = new CSVReader(new BufferedReader(new InputStreamReader(inputStream), 32768), this.separator, this.quote);
 		this.header = csvReader.readNext();
 		this.nextLine = csvReader.readNext();
 	}

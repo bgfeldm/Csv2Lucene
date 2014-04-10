@@ -16,14 +16,12 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.supercsv.comment.CommentMatcher;
 import org.supercsv.comment.CommentStartsWith;
 import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 
 import com.google.common.base.Stopwatch;
-import com.googlecode.jcsv.annotations.processors.StringProcessor;
 
 /**
  * SuperCSVReader uses the csv parser from SuperCSV project. 
@@ -46,10 +44,17 @@ public class SuperCSVReader implements RecordIterator {
 	private String comment = "#";
 	private String recordDelimiter = "\n";
 
+	/**
+	 * @param separator		field separator character.  usually ',' in North America, ';' in Europe and sometimes '\t' for tab.
+	 */
 	public SuperCSVReader(final char separator){
 		this(separator, '"');
 	}
 
+	/**
+	 * @param separator		field separator character.  usually ',' in North America, ';' in Europe and sometimes '\t' for tab.
+	 * @param quote			character use to enclose fields containing a separator. usually '"'
+	 */
 	public SuperCSVReader(final char separator, final char quote){
 		this.separator = separator;
 		this.quote = quote;
@@ -57,6 +62,11 @@ public class SuperCSVReader implements RecordIterator {
 		csvPreference = new CsvPreference.Builder(this.quote, this.separator, this.recordDelimiter).surroundingSpacesNeedQuotes(true).build();
 	}
 	
+	/**
+	 * @param separator		field separator character.  usually ',' in North America, ';' in Europe and sometimes '\t' for tab.
+	 * @param quote			character use to enclose fields containing a separator. usually '"'
+	 * @param comment		leading character used on comment lines.
+	 */
 	public SuperCSVReader(final char separator, final char quote, final char comment){
 		this.separator = separator;
 		this.quote = quote;
@@ -70,7 +80,7 @@ public class SuperCSVReader implements RecordIterator {
 		this.file=file;
 		InputStream inputStream = new FileInputStream(file);
 		// inputStream.skip(8); // Skip over first couple byes of file.
-		this.csvReader = new CsvListReader(new BufferedReader(new InputStreamReader(inputStream)), csvPreference);
+		this.csvReader = new CsvListReader(new BufferedReader(new InputStreamReader(inputStream), 32768), csvPreference);
 		try {
 			this.header = csvReader.getHeader(false);
 			List<String> nextLine = csvReader.read();

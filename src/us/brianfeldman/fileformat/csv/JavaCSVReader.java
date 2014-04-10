@@ -25,8 +25,11 @@ import com.google.common.base.Stopwatch;
 import com.googlecode.jcsv.reader.CSVReader;
 
 /**
+ * JavaCSVReader uses the csv parser from JavaCSV project. 
+ * 
  * @author Brian Feldman <bgfeldm@yahoo.com>
- *
+ * 
+ * @link http://javacsv.sourceforge.net/
  */
 public class JavaCSVReader implements RecordIterator {
 	private static final Logger LOG = LoggerFactory.getLogger(JavaCSVReader.class);
@@ -42,15 +45,27 @@ public class JavaCSVReader implements RecordIterator {
 	private boolean ignoreEmptyLines = true;
 	private char recordDelimiter = '\n';
 
+	/**
+	 * @param separator		field separator character.  usually ',' in North America, ';' in Europe and sometimes '\t' for tab.
+	 */
 	public JavaCSVReader(final char separator){
 		this(separator, '"');
 	}
 
+	/**
+	 * @param separator		field separator character.  usually ',' in North America, ';' in Europe and sometimes '\t' for tab.
+	 * @param quote			character use to enclose fields containing a separator. usually '"'
+	 */
 	public JavaCSVReader(final char separator, final char quote){
 		this.separator = separator;
 		this.quote = quote;
 	}
 
+	/**
+	 * @param separator		field separator character.  usually ',' in North America, ';' in Europe and sometimes '\t' for tab.
+	 * @param quote			character use to enclose fields containing a separator. usually '"'
+	 * @param comment		leading character used on comment lines. Comment lines are ignored.
+	 */
 	public JavaCSVReader(final char separator, final char quote, final char comment){
 		this.separator = separator;
 		this.quote = quote;
@@ -104,7 +119,7 @@ public class JavaCSVReader implements RecordIterator {
 	public void open(final File file) throws IOException {
 		this.file = file;
 		InputStream inputStream = new FileInputStream(file);
-		Reader reader = new BufferedReader(new InputStreamReader(inputStream));
+		Reader reader = new BufferedReader(new InputStreamReader(inputStream), 32768);
 		csvReader = new CsvReader(reader, this.separator);
 		//csvReader.setSafetySwitch(false);
 		csvReader.setTrimWhitespace(true);

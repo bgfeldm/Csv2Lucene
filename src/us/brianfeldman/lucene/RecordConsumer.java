@@ -22,7 +22,7 @@ import com.fasterxml.uuid.impl.TimeBasedGenerator;
  * RecordConsumer
  * 
  * Record thread builds the Lucene Document from the record,
- * then adds the document to Lucene writer.
+ * then adds the document to the shared Lucene writer.
  * 
  * @author Brian G. Feldman <bgfeldm@yahoo.com>
  */
@@ -66,22 +66,26 @@ public class RecordConsumer implements Runnable {
 			document = new Document();
 			LOG.debug("Initializing document.");
 			for(int i=0; i < header.length; i++){
-				document.add(new StringField(header[i], record[i].toLowerCase().trim(), Store.YES));
+				document.add(new StringField(header[i], record[i].trim(), Store.YES));
+				document.add(new StringField("_all", record[i].trim(), Store.NO));  // Catch all field for searching only.
 			}
 			
 			for (Map.Entry<String, String> entry : metadata.entrySet()) {
 				document.add(new StringField(entry.getKey(), entry.getValue(), Store.YES));
-			}
+			}			
 			
 			tlocal.set(document);
 		} else {
+			document.removeFields("_all"); // remove catch all fields.
 			for(int i=0; i < header.length; i++){
 				StringField field = (StringField) document.getField( header[i] );
-				field.setStringValue( record[i].toLowerCase().trim() );
+				field.setStringValue( record[i].trim() );
+				document.add(new StringField("_all", record[i].trim(), Store.NO));  // Catch all field for searching only.
 			}
+
 			for (Map.Entry<String, String> entry : metadata.entrySet()) {
 				StringField field = (StringField) document.getField( entry.getKey() );
-				field.setStringValue( entry.getValue() );				
+				field.setStringValue( entry.getValue() );
 			}
 		}
 
@@ -94,6 +98,7 @@ public class RecordConsumer implements Runnable {
 	 */
 	public void addToIndex(){
 		try {
+			//document.getFields().size();
 			writer.addDocument(document);
 			//LOG.debug("completed: {}", record.get("_doc_id"));
 		} catch (IOException e) {

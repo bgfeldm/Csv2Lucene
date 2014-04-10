@@ -12,9 +12,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 
 import org.slf4j.Logger;
@@ -23,9 +21,12 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Stopwatch;
 
 /**
- * Reader returns Map for each CSV row.
+ * SimpleCSVReader
  *  
  * Note this reader does not handle more complex csv which use comments or quotes.
+ * 
+ * This implementation uses java.util.Scanner; 
+ * Due to the limitations of String.split() and StringTokenizer() either they do return any empty columns or the empty trailing column.
  * 
  * @author Brian G. Feldman (bgfeldm@yahoo.com)
  *
@@ -40,6 +41,9 @@ public class SimpleCSVReader implements RecordIterator {
     private int currentLineNumber = 0;
     final private String separator;
 
+    /**
+	 * @param separator		field separator character.  usually ',' in North America, ';' in Europe and sometimes '\t' for tab.
+     */
     public SimpleCSVReader(final char separator) {
          this.separator = Character.toString(separator);
     }
@@ -50,7 +54,7 @@ public class SimpleCSVReader implements RecordIterator {
 		 FileInputStream fstream = new FileInputStream(file);
          //fstream.skip(8); // trim off magic header.
 		 
-         this.reader = new BufferedReader(new InputStreamReader(fstream));
+         this.reader = new BufferedReader(new InputStreamReader(fstream), 32768);
          this.header = reader.readLine().split(separator);
          currentLineNumber++; // counting header as a line.
          this.nextLine = readLine();
