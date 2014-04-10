@@ -138,8 +138,8 @@ public class Indexer {
 	 * @param cpuMultiplier 
 	 * @throws IOException
 	 */
-	public void index(final Collection<File> files, final int cpuMultiplier) throws IOException{
-		final int maxThreads = CPU_PROCESSORS * cpuMultiplier;
+	public void index(final Collection<File> files, final double cpuMultiplier) throws IOException{
+		final int maxThreads = (int) (CPU_PROCESSORS * cpuMultiplier);
 		LOG.debug("maxthreads: {}", maxThreads);
 
 		recordQueue = new LinkedTransferQueue<Runnable>();
@@ -198,7 +198,7 @@ public class Indexer {
 	public static void main(String[] args) throws IOException {
 		String indexDir = args[0];
 		String[] fileNameSuffixes = {"csv"};
-		int cpuMultiplyer = 2;
+		double cpuMultiplyer = 2.0;
 
 		File indexDirFile = new File(indexDir);
 
