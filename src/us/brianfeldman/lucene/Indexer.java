@@ -93,7 +93,9 @@ public class Indexer {
 		File indexPathFile = new File(indexPath);
 		LOG.info("Opening index writer at: "+indexPathFile.getAbsolutePath());
 		
-		final Analyzer analyzer = new StandardAnalyzer(LUCENE_VERSION, StopAnalyzer.ENGLISH_STOP_WORDS_SET);
+		//final Analyzer analyzer = new StandardAnalyzer(LUCENE_VERSION, StopAnalyzer.ENGLISH_STOP_WORDS_SET);
+		final MyAnalyzer analyzer = new MyAnalyzer(LUCENE_VERSION);
+		
 		IndexWriterConfig iwc = new IndexWriterConfig(LUCENE_VERSION, analyzer);
 		iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
 

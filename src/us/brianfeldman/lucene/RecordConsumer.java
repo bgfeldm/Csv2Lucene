@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
 
-import org.apache.commons.codec.binary.StringUtils;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
@@ -107,14 +106,14 @@ public class RecordConsumer implements Runnable {
 	 */
 	public void createTokenizedAllField(String fieldValue){
 		try {
-			TokenStream stream = writer.getAnalyzer().tokenStream("_ALL", new StringReader(fieldValue));
-			CharTermAttribute cattr = stream.addAttribute(CharTermAttribute.class);
-			stream.reset();
-			while (stream.incrementToken()) {
+			TokenStream tok = writer.getAnalyzer().tokenStream("_ALL", new StringReader(fieldValue));
+			CharTermAttribute cattr = tok.addAttribute(CharTermAttribute.class);
+			tok.reset();
+			while (tok.incrementToken()) {
 				document.add(new TextField("_ALL", cattr.toString(), Store.NO));  // Catch all field for searching only.
 			}
-			stream.end();
-			stream.close();
+			tok.end();
+			tok.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
