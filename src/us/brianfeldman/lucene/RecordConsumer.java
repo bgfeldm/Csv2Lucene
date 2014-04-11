@@ -4,11 +4,16 @@
 package us.brianfeldman.lucene;
 
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Map;
 
+import org.apache.commons.codec.binary.StringUtils;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field.Store;
 import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.IndexWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,23 +71,23 @@ public class RecordConsumer implements Runnable {
 			document = new Document();
 			LOG.debug("Initializing document.");
 			for(int i=0; i < header.length; i++){
-				document.add(new StringField(header[i], record[i].trim(), Store.YES));
-				document.add(new StringField("_all", record[i].trim(), Store.NO));  // Catch all field for searching only.
-			}
-			
-			for (Map.Entry<String, String> entry : metadata.entrySet()) {
-				document.add(new StringField(entry.getKey(), entry.getValue(), Store.YES));
-			}			
-			
-			tlocal.set(document);
-		} else {
-			document.removeFields("_all"); // remove catch all fields.
-			for(int i=0; i < header.length; i++){
-				StringField field = (StringField) document.getField( header[i] );
-				field.setStringValue( record[i].trim() );
-				document.add(new StringField("_all", record[i].trim(), Store.NO));  // Catch all field for searching only.
+				document.add(new TextField(header[i], record[i], Store.YES));
+				createTokenizedAllField( record[i] );
 			}
 
+			for (Map.Entry<String, String> entry : metadata.entrySet()) {
+				document.add(new StringField(entry.getKey(), entry.getValue(), Store.YES));
+			}
+
+			tlocal.set(document);
+		} else {
+			document.removeFields("_ALL"); // remove catch all fields from previous use of the document.
+			for(int i=0; i < header.length; i++){
+				TextField field = (TextField) document.getField( header[i] );
+				field.setStringValue( record[i] );
+				createTokenizedAllField( record[i] );
+			}
+			
 			for (Map.Entry<String, String> entry : metadata.entrySet()) {
 				StringField field = (StringField) document.getField( entry.getKey() );
 				field.setStringValue( entry.getValue() );
@@ -93,6 +98,28 @@ public class RecordConsumer implements Runnable {
 	}
 
 
+	/**
+	 * createTokenizedAllField
+	 * 
+	 * Adds catch all field "_ALL" for searching across all fields.
+	 * 
+	 * @param fieldValue
+	 */
+	public void createTokenizedAllField(String fieldValue){
+		try {
+			TokenStream stream = writer.getAnalyzer().tokenStream("_ALL", new StringReader(fieldValue));
+			CharTermAttribute cattr = stream.addAttribute(CharTermAttribute.class);
+			stream.reset();
+			while (stream.incrementToken()) {
+				document.add(new TextField("_ALL", cattr.toString(), Store.NO));  // Catch all field for searching only.
+			}
+			stream.end();
+			stream.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	/**
 	 * Add Document to Index.
 	 */

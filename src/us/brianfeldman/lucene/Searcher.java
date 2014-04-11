@@ -9,7 +9,9 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 
+
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.AtomicReader;
@@ -38,15 +40,19 @@ import com.google.common.base.Stopwatch;
  * 
  * @link https://lucene.apache.org/core/4_7_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html
  */
+
+
 public class Searcher {
 
+	private static Version LUCENE_VERSION=Version.LUCENE_47;
 	private final String indexPath="build/luceneIndex";
+	private static String DEFAULT_SEARCH_FIELD = "_ALL";
+	
 	private IndexReader reader;
 	private IndexSearcher searcher;
 	private Stopwatch stopwatch = Stopwatch.createUnstarted();
 	private int indexDocumentCount;
 
-	private static String DEFAULT_SEARCH_FIELD = "_ALL";
 	private static char[] COMPLETE_ESCAPE_CHARS = {'+','-','&','|','(',')','{','}','[',']','^','"','~','*','?',':','\\'};
 	private static char[] SAFE_ESCAPE_CHARS = {'+','-','&','|','~','*','?'};
 	
@@ -99,12 +105,13 @@ public class Searcher {
 	 * @throws org.apache.lucene.queryparser.classic.ParseException 
 	 */
 	public SearchResults find(String queryStr, int page, int pageSize) throws ParseException, IOException {
-		Analyzer analyzer = new StandardAnalyzer(Version.LUCENE_47);
+		
+		Analyzer analyzer = new StandardAnalyzer(LUCENE_VERSION, StopAnalyzer.ENGLISH_STOP_WORDS_SET);
 
 		int offset = page * pageSize;
 		TopScoreDocCollector collector = TopScoreDocCollector.create(offset+pageSize, true);
 		
-		QueryParser qparser = new QueryParser(Version.LUCENE_47, DEFAULT_SEARCH_FIELD, analyzer);
+		QueryParser qparser = new QueryParser(LUCENE_VERSION, DEFAULT_SEARCH_FIELD, analyzer);
 		qparser.setAllowLeadingWildcard(true);
 		qparser.setDefaultOperator(Operator.OR);
 
