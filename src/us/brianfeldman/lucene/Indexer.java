@@ -8,10 +8,8 @@ import org.apache.log4j.PropertyConfigurator;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -22,14 +20,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TransferQueue;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.core.LowerCaseFilter;
-import org.apache.lucene.analysis.core.StopAnalyzer;
-import org.apache.lucene.analysis.core.StopFilter;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.standard.StandardTokenizer;
-import org.apache.lucene.analysis.synonym.SynonymFilterFactory;
-import org.apache.lucene.analysis.util.FilesystemResourceLoader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.IndexWriterConfig.OpenMode;
@@ -92,10 +82,11 @@ public class Indexer {
 	public void openWriter() {
 		File indexPathFile = new File(indexPath);
 		LOG.info("Opening index writer at: "+indexPathFile.getAbsolutePath());
-		
+
 		//final Analyzer analyzer = new StandardAnalyzer(LUCENE_VERSION, StopAnalyzer.ENGLISH_STOP_WORDS_SET);
-		final MyAnalyzer analyzer = new MyAnalyzer(LUCENE_VERSION);
-		
+		final Analyzer analyzer = new CustomAnalyzer(LUCENE_VERSION);
+		//final Analyzer analyzer = new NGramAnalyzer(LUCENE_VERSION, 2, 7);
+
 		IndexWriterConfig iwc = new IndexWriterConfig(LUCENE_VERSION, analyzer);
 		iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
 

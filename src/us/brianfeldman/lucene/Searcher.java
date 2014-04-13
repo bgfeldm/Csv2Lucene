@@ -11,6 +11,7 @@ import java.util.Set;
 
 
 
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -107,8 +108,9 @@ public class Searcher {
 	 */
 	public SearchResults find(String queryStr, int page, int pageSize) throws ParseException, IOException {
 		
-		//Analyzer analyzer = new StandardAnalyzer(LUCENE_VERSION, StopAnalyzer.ENGLISH_STOP_WORDS_SET);
-		final MyAnalyzer analyzer = new MyAnalyzer(LUCENE_VERSION);
+		//final Analyzer analyzer = new StandardAnalyzer(LUCENE_VERSION, StopAnalyzer.ENGLISH_STOP_WORDS_SET);
+		final Analyzer analyzer = new CustomAnalyzer(LUCENE_VERSION);
+		//final Analyzer analyzer = new NGramAnalyzer(LUCENE_VERSION, 2, 7);
 
 		int offset = page * pageSize;
 		TopScoreDocCollector collector = TopScoreDocCollector.create(offset+pageSize, true);
