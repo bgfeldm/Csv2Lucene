@@ -44,7 +44,7 @@ import us.brianfeldman.fileformat.csv.RecordIterator;
 public class Indexer {
 	private static final Logger LOG = LoggerFactory.getLogger(Indexer.class);
 
-	private static Version LUCENE_VERSION=Version.LUCENE_47;
+	private static Version LUCENE_VERSION=Version.LUCENE_48;
 	private final String indexPath="build/luceneIndex";
 
 	private static final int CPU_PROCESSORS = Runtime.getRuntime().availableProcessors();

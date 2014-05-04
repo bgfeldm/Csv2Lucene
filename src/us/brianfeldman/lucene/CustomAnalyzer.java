@@ -40,7 +40,7 @@ public class CustomAnalyzer extends Analyzer {
 		result = new ASCIIFoldingFilter(result);  //Convert UNICODE to ASCII.
 		//result = new SynonymFilter(result, synonyms, false);
 		result = new StopFilter(luceneVersion, result, StopAnalyzer.ENGLISH_STOP_WORDS_SET);
-		result = new WordDelimiterFilter(result, WordDelimiterFilter.CATENATE_WORDS, null);
+		result = new WordDelimiterFilter(luceneVersion, result, WordDelimiterFilter.CATENATE_WORDS, null);
 		result = new LowerCaseFilter(luceneVersion, result);
 		result = new PorterStemFilter(result); // must be after LowerCaseFilter.
 		result = new RemoveDuplicatesTokenFilter(result);

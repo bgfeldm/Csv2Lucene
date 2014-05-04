@@ -46,7 +46,7 @@ import com.google.common.base.Stopwatch;
 
 public class Searcher {
 
-	private static Version LUCENE_VERSION=Version.LUCENE_47;
+	private static Version LUCENE_VERSION=Version.LUCENE_48;
 	private final String indexPath="build/luceneIndex";
 	private static String DEFAULT_SEARCH_FIELD = "_ALL";
 	
