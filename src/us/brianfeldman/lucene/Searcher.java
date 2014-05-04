@@ -12,6 +12,8 @@ import java.util.Set;
 
 
 
+
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -46,8 +48,10 @@ import com.google.common.base.Stopwatch;
 
 public class Searcher {
 
-	private static Version LUCENE_VERSION=Version.LUCENE_48;
-	private final String indexPath="build/luceneIndex";
+	private static Version LUCENE_VERSION=LuceneConfig.getLuceneVersion();
+
+	private final String indexPath=LuceneConfig.getIndexPath();
+	
 	private static String DEFAULT_SEARCH_FIELD = "_ALL";
 	
 	private IndexReader reader;
@@ -108,9 +112,7 @@ public class Searcher {
 	 */
 	public SearchResults find(String queryStr, int page, int pageSize) throws ParseException, IOException {
 		
-		//final Analyzer analyzer = new StandardAnalyzer(LUCENE_VERSION, StopAnalyzer.ENGLISH_STOP_WORDS_SET);
-		final Analyzer analyzer = new CustomAnalyzer(LUCENE_VERSION);
-		//final Analyzer analyzer = new NGramAnalyzer(LUCENE_VERSION, 2, 7);
+		final Analyzer analyzer = LuceneConfig.getAnalyzer();
 
 		int offset = page * pageSize;
 		TopScoreDocCollector collector = TopScoreDocCollector.create(offset+pageSize, true);

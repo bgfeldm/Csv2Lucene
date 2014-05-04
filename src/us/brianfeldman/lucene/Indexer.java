@@ -44,8 +44,9 @@ import us.brianfeldman.fileformat.csv.RecordIterator;
 public class Indexer {
 	private static final Logger LOG = LoggerFactory.getLogger(Indexer.class);
 
-	private static Version LUCENE_VERSION=Version.LUCENE_48;
-	private final String indexPath="build/luceneIndex";
+	private static Version LUCENE_VERSION=LuceneConfig.getLuceneVersion();
+
+	private final String indexPath=LuceneConfig.getIndexPath();
 
 	private static final int CPU_PROCESSORS = Runtime.getRuntime().availableProcessors();
 	private IndexWriter writer;
@@ -83,9 +84,7 @@ public class Indexer {
 		File indexPathFile = new File(indexPath);
 		LOG.info("Opening index writer at: "+indexPathFile.getAbsolutePath());
 
-		//final Analyzer analyzer = new StandardAnalyzer(LUCENE_VERSION, StopAnalyzer.ENGLISH_STOP_WORDS_SET);
-		final Analyzer analyzer = new CustomAnalyzer(LUCENE_VERSION);
-		//final Analyzer analyzer = new NGramAnalyzer(LUCENE_VERSION, 2, 7);
+		final Analyzer analyzer = LuceneConfig.getAnalyzer();
 
 		IndexWriterConfig iwc = new IndexWriterConfig(LUCENE_VERSION, analyzer);
 		iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
