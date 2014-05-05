@@ -8,12 +8,6 @@ import java.io.IOException;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-
-
-
-
-
-
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -26,7 +20,6 @@ import org.apache.lucene.index.FieldInfos;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.queryparser.classic.QueryParser.Operator;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -48,14 +41,15 @@ import com.google.common.base.Stopwatch;
 
 public class Searcher {
 
-	private static Version LUCENE_VERSION=LuceneConfig.getLuceneVersion();
+	private static final Configuration config = Configuration.getInstance();
+	
+	private static Version LUCENE_VERSION = config.getLuceneVersion();
+	
+	private static String DEFAULT_SEARCH_FIELD = config.getDefaultSearchField();
+	
+	private static IndexReader reader;
+	private static IndexSearcher searcher;
 
-	private final String indexPath=LuceneConfig.getIndexPath();
-	
-	private static String DEFAULT_SEARCH_FIELD = "_ALL";
-	
-	private IndexReader reader;
-	private IndexSearcher searcher;
 	private Stopwatch stopwatch = Stopwatch.createUnstarted();
 	private int indexDocumentCount;
 
@@ -68,15 +62,22 @@ public class Searcher {
 	 * @throws IOException
 	 */
 	public Searcher() throws IOException {
-		Directory directory = NIOFSDirectory.open(new File(indexPath));
-		//reader = IndexReader.open(directory);
-		reader = DirectoryReader.open(directory);
-		indexDocumentCount = reader.numDocs();
-		searcher = new IndexSearcher(reader);
+		searcher = getIndexSearcher();
 	}
-	
-	public IndexSearcher getIndexSearcher(){
-		return this.searcher;
+
+	private IndexSearcher getIndexSearcher(){
+		if (reader == null || searcher == null){
+			Directory directory;
+			try {
+				directory = NIOFSDirectory.open(new File(config.getIndexPath()));
+				reader = DirectoryReader.open(directory);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			indexDocumentCount = reader.numDocs();
+			searcher = new IndexSearcher(reader);
+		}
+		return searcher;
 	}
 
 	public Set<String> getSearchableFields() throws IOException{
@@ -91,8 +92,6 @@ public class Searcher {
 				fields.add(fi.name);
 			}
 		}
-
-		reader.close();
 		
 		return fields;
 	}
@@ -104,6 +103,7 @@ public class Searcher {
 	 * @param queryStr
 	 * @param recordsPerPage 
 	 * @param page 
+	 * @param pageSize 
 	 * @return SearchResults
 	 * @throws ParseException
 	 * @throws IOException
@@ -112,14 +112,14 @@ public class Searcher {
 	 */
 	public SearchResults find(String queryStr, int page, int pageSize) throws ParseException, IOException {
 		
-		final Analyzer analyzer = LuceneConfig.getAnalyzer();
+		final Analyzer analyzer = config.getAnalyzer();
 
 		int offset = page * pageSize;
 		TopScoreDocCollector collector = TopScoreDocCollector.create(offset+pageSize, true);
 		
 		QueryParser qparser = new QueryParser(LUCENE_VERSION, DEFAULT_SEARCH_FIELD, analyzer);
 		qparser.setAllowLeadingWildcard(true);
-		qparser.setDefaultOperator(Operator.OR);
+		qparser.setDefaultOperator( config.getDefaultSearchOperator() );
 
 		Query query = qparser.parse(queryStr);
 		searcher.search(query, collector);
@@ -173,7 +173,7 @@ public class Searcher {
 	public static void main(String[] args) throws IOException, ParseException, org.apache.lucene.queryparser.classic.ParseException {
 		String queryStr=args[0];
 		Searcher search = new Searcher();
-		SearchResults results = search.find(queryStr, 25, 0);
+		SearchResults results = search.find(queryStr, 0, 25);
 		results.stdout();
 
 		// Searchable Fields.

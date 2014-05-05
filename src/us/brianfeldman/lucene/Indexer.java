@@ -44,10 +44,8 @@ import us.brianfeldman.fileformat.csv.RecordIterator;
 public class Indexer {
 	private static final Logger LOG = LoggerFactory.getLogger(Indexer.class);
 
-	private static Version LUCENE_VERSION=LuceneConfig.getLuceneVersion();
-
-	private final String indexPath=LuceneConfig.getIndexPath();
-
+	private static final Configuration config = Configuration.getInstance();
+	
 	private static final int CPU_PROCESSORS = Runtime.getRuntime().availableProcessors();
 	private IndexWriter writer;
 	private final RecordIterator csvReader;
@@ -63,7 +61,7 @@ public class Indexer {
 	static {
 		Properties props = new Properties();
 		try {
-			props.load(new FileInputStream("lib/log4j.properties"));
+			props.load(new FileInputStream("config/log4j.properties"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -81,20 +79,10 @@ public class Indexer {
 	 * @throws IOException
 	 */
 	public void openWriter() {
-		File indexPathFile = new File(indexPath);
+		File indexPathFile = new File( config.getIndexPath() );
 		LOG.info("Opening index writer at: "+indexPathFile.getAbsolutePath());
 
-		final Analyzer analyzer = LuceneConfig.getAnalyzer();
-
-		IndexWriterConfig iwc = new IndexWriterConfig(LUCENE_VERSION, analyzer);
-		iwc.setOpenMode(OpenMode.CREATE_OR_APPEND);
-
-		// Optional: for better indexing performance, increase the RAM buffer.  
-		// But if you do this, increase the max heap size to the JVM (eg add -Xmx512m or -Xmx1g):
-		iwc.setRAMBufferSizeMB(128);   // lucene's default is 16 MB.
-		iwc.setMaxThreadStates(16);  // default is 8.  Max threads communicating with the writer.
-		iwc.setUseCompoundFile(false);
-		iwc.setWriteLockTimeout(5000);
+		IndexWriterConfig iwc = config.getIndexWriterConfig();
 
 		try {
 			Directory directory = NIOFSDirectory.open(indexPathFile);
@@ -129,8 +117,35 @@ public class Indexer {
 		}
 	}
 
-	public String getStartTime() { return startTime; }
+	/**
+	 * Get Start Time.
+	 * @return
+	 */
+	public String getStartTime() { return startTime; };
 
+	/**
+	 * Index Directory of CSV files.
+	 * 
+	 * @param directory as String
+	 * @throws IOException 
+	 */
+	public void index(String directory) throws IOException{
+		String[] fileNameSuffixes = config.getIndexFilenameSuffixes();
+
+		File indexDirFile = new File( directory );
+
+		Collection<File> files;
+		if (indexDirFile.isDirectory()){
+			files = FileUtils.listFiles(indexDirFile, fileNameSuffixes, true);
+		} else {
+			files = new ArrayList<File>();
+			files.add(indexDirFile);
+		}
+		
+		this.index( files );
+	}
+	
+	
 	/**
 	 * Index Directory of CSV files.
 	 * 
@@ -138,8 +153,10 @@ public class Indexer {
 	 * @param cpuMultiplier 
 	 * @throws IOException
 	 */
-	public void index(final Collection<File> files, final double cpuMultiplier) throws IOException{
-		final int maxThreads = (int) (CPU_PROCESSORS * cpuMultiplier);
+	public void index(final Collection<File> files) throws IOException{
+		LOG.info("Indexing files; file count: {}", files.size());
+		
+		final int maxThreads = (int) (CPU_PROCESSORS * config.getIndexerCpuMultiplier());
 		LOG.debug("maxthreads: {}", maxThreads);
 
 		recordQueue = new LinkedTransferQueue<Runnable>();
@@ -191,26 +208,13 @@ public class Indexer {
 		}
 	}
 
+
 	/**
 	 * @param args
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
 		String indexDir = args[0];
-		String[] fileNameSuffixes = {"csv"};
-		double cpuMultiplyer = 2.0;
-
-		File indexDirFile = new File(indexDir);
-
-		Collection<File> files;
-		if (indexDirFile.isDirectory()){
-			files = FileUtils.listFiles(indexDirFile, fileNameSuffixes, true);
-		} else {
-			files = new ArrayList<File>();
-			files.add(indexDirFile);
-		}
-
-		LOG.info("Indexing files; file count: {}", files.size());
 
 		/*
 		 * Five build-in csv parsers, listed from fastest to slowest.
@@ -225,8 +229,8 @@ public class Indexer {
 		Indexer indexer = new Indexer(csvReader);
 
 		Stopwatch stopwatch = Stopwatch.createStarted();
-
-		indexer.index(files, cpuMultiplyer);
+		
+		indexer.index(indexDir);
 
 		LOG.info("Finished adding records; closing index.");
 
