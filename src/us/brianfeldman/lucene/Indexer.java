@@ -58,16 +58,6 @@ public class Indexer {
 	private int doneFileCount = 0;
 	private int totalFileCount = 0;
 
-	static {
-		Properties props = new Properties();
-		try {
-			props.load(new FileInputStream("config/log4j.properties"));
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		PropertyConfigurator.configure(props);
-	}
-
 	public Indexer(RecordIterator csvReader){
 		this.csvReader = csvReader;
 		openWriter();

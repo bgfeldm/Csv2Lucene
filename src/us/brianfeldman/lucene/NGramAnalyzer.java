@@ -30,6 +30,8 @@ import org.apache.lucene.util.Version;
  */
 public class NGramAnalyzer extends Analyzer {
 	
+	private static final Configuration config = Configuration.getInstance();
+	
 	private Version luceneVersion;
 	private int minGramSize = 2;
 	private int maxGramSize = 5;
@@ -54,7 +56,7 @@ public class NGramAnalyzer extends Analyzer {
 		TokenStream result = new StandardFilter(luceneVersion, source);
 		result = new ASCIIFoldingFilter(result);  //Convert UNICODE to ASCII.
 		//result = new SynonymFilter(result, synonyms, false);
-		result = new StopFilter(luceneVersion, result, StopAnalyzer.ENGLISH_STOP_WORDS_SET);
+		result = new StopFilter(luceneVersion, result, config.getStopWords());		
 		result = new WordDelimiterFilter(luceneVersion, result, WordDelimiterFilter.CATENATE_WORDS, null);
 		result = new LowerCaseFilter(luceneVersion, result);
 

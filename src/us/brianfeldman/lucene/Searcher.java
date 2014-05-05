@@ -27,6 +27,8 @@ import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.NIOFSDirectory;
 import org.apache.lucene.util.Version;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Stopwatch;
 
@@ -37,10 +39,9 @@ import com.google.common.base.Stopwatch;
  * 
  * @link https://lucene.apache.org/core/4_7_0/queryparser/org/apache/lucene/queryparser/classic/package-summary.html
  */
-
-
 public class Searcher {
-
+	private static final Logger LOG = LoggerFactory.getLogger(Searcher.class);
+	
 	private static final Configuration config = Configuration.getInstance();
 	
 	private static Version LUCENE_VERSION = config.getLuceneVersion();
@@ -65,14 +66,19 @@ public class Searcher {
 		searcher = getIndexSearcher();
 	}
 
-	private IndexSearcher getIndexSearcher(){
+	/**
+	 * Get Index Searcher
+	 * 
+	 * @return IndexSearcher
+	 */
+	public IndexSearcher getIndexSearcher(){
 		if (reader == null || searcher == null){
 			Directory directory;
 			try {
 				directory = NIOFSDirectory.open(new File(config.getIndexPath()));
 				reader = DirectoryReader.open(directory);
 			} catch (IOException e) {
-				e.printStackTrace();
+				LOG.error("Failed to open Index Searcher", e);
 			}
 			indexDocumentCount = reader.numDocs();
 			searcher = new IndexSearcher(reader);
