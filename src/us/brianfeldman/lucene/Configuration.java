@@ -248,7 +248,7 @@ public class Configuration {
 			BufferedReader buffreader = new BufferedReader(
 				    new InputStreamReader(
 				        new FileInputStream(
-				             new File(synonymFile)
+				             new File(stopWordFile)
 				        )
 				    )
 				);
