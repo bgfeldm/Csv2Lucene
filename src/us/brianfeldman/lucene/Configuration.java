@@ -51,11 +51,11 @@ public class Configuration {
 
 	private String stopWordFile ="config/stopwords.txt";
 
-	private final Version LUCENE_VERSION = Version.LUCENE_48;
+	private final Version LUCENE_VERSION = Version.LATEST;
 
-	private final Analyzer analyzer = new CustomAnalyzer(LUCENE_VERSION);
-	//final Analyzer analyzer = new StandardAnalyzer(LUCENE_VERSION, StopAnalyzer.ENGLISH_STOP_WORDS_SET);
-	//final Analyzer analyzer = new NGramAnalyzer(LUCENE_VERSION, 2, 7);
+	private final Analyzer analyzer = new CustomAnalyzer();
+	//final Analyzer analyzer = new StandardAnalyzer(StopAnalyzer.ENGLISH_STOP_WORDS_SET);
+	//final Analyzer analyzer = new NGramAnalyzer(2, 7);
 
 	private String indexPath = "build/luceneIndex";
 

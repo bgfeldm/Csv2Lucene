@@ -32,7 +32,6 @@ public class NGramAnalyzer extends Analyzer {
 	
 	private static final Configuration config = Configuration.getInstance();
 	
-	private Version luceneVersion;
 	private int minGramSize = 2;
 	private int maxGramSize = 5;
 
@@ -43,25 +42,24 @@ public class NGramAnalyzer extends Analyzer {
 	 * @param minGramSize	Minimum nGram size
 	 * @param maxGramSize	Maximum nGram size
 	 */
-	public NGramAnalyzer(Version luceneVersion, int minGramSize, int maxGramSize){
+	public NGramAnalyzer(int minGramSize, int maxGramSize){
 		super();
-		this.luceneVersion = luceneVersion;
 		this.minGramSize = minGramSize;
 		this.maxGramSize = maxGramSize;
 	}
 
 	@Override
 	protected TokenStreamComponents  createComponents(String fieldName, Reader reader) {
-		final Tokenizer source = new StandardTokenizer(luceneVersion, reader);
-		TokenStream result = new StandardFilter(luceneVersion, source);
+		final Tokenizer source = new StandardTokenizer(reader);
+		TokenStream result = new StandardFilter(source);
 		result = new ASCIIFoldingFilter(result);  //Convert UNICODE to ASCII.
 		//result = new SynonymFilter(result, synonyms, false);
-		result = new StopFilter(luceneVersion, result, config.getStopWords());		
-		result = new WordDelimiterFilter(luceneVersion, result, WordDelimiterFilter.CATENATE_WORDS, null);
-		result = new LowerCaseFilter(luceneVersion, result);
+		result = new StopFilter(result, config.getStopWords());		
+		result = new WordDelimiterFilter(result, WordDelimiterFilter.CATENATE_WORDS, null);
+		result = new LowerCaseFilter(result);
 
-		result = new NGramTokenFilter(luceneVersion, result, minGramSize, maxGramSize);
-		//result = new EdgeNGramTokenFilter(luceneVersion, result, minGramSize, maxGramSize);
+		result = new NGramTokenFilter(result, minGramSize, maxGramSize);
+		//result = new EdgeNGramTokenFilter(result, minGramSize, maxGramSize);
 
 		result = new RemoveDuplicatesTokenFilter(result);
 		return new TokenStreamComponents(source, result);
